@@ -2,7 +2,7 @@ package blockchain
 
 import "testing"
 
-func TestBlock(t *testing.T) {
+func TestProof(t *testing.T) {
 	bchain := InitBlockchain()
 	blocks := []string{"A", "B", "C"}
 
@@ -23,5 +23,15 @@ func TestBlock(t *testing.T) {
 		if got != expected {
 			t.Errorf("block %d data mismatch: expected %q, got %q", i+1, expected, got)
 		}
+	}
+
+
+	for i, v := range bchain.Blocks {
+		proof := NewProof(v)
+
+		if !proof.Validate() {
+			t.Errorf("invalid proof for block %d", i)
+		}
+
 	}
 }

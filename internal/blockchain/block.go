@@ -23,8 +23,10 @@ func CreateBlock(data string, prevHash []byte) *Block{
 		Nonce: 0,
 	}
 
-	block.Hash = block.DeriveHash()
-
+	proof := NewProof(&block)
+	nonce, hash := proof.Run() 
+	block.Hash = hash 
+	block.Nonce = nonce
 	return &block
 }
 
