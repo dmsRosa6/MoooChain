@@ -2,7 +2,7 @@ package blockchain
 
 import "testing"
 
-func TestBlock(t *testing.T) {
+func TestBlockChain(t *testing.T) {
 	bchain := InitBlockchain()
 	blocks := []string{"A", "B", "C"}
 
