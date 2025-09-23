@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"encoding/json"
+	"log"
 	"os"
 	"strconv"
 
@@ -10,29 +11,41 @@ import (
 
 var UseJSON bool
 
-
 type Serializer interface {
-    Marshal(v interface{}) ([]byte, error)
-    Unmarshal(data []byte, v interface{}) error
+	Marshal(v interface{}) ([]byte, error)
+	Unmarshal(data []byte, v interface{}) error
 }
 
 type JSONSerializer struct{}
-func (JSONSerializer) Marshal(v interface{}) ([]byte, error) { return json.Marshal(v) }
+
+func (JSONSerializer) Marshal(v interface{}) ([]byte, error)      { return json.Marshal(v) }
 func (JSONSerializer) Unmarshal(data []byte, v interface{}) error { return json.Unmarshal(data, v) }
 
 type MsgPackSerializer struct{}
+
 func (MsgPackSerializer) Marshal(v interface{}) ([]byte, error) { return msgpack.Marshal(v) }
-func (MsgPackSerializer) Unmarshal(data []byte, v interface{}) error { return msgpack.Unmarshal(data, v) }
+func (MsgPackSerializer) Unmarshal(data []byte, v interface{}) error {
+	return msgpack.Unmarshal(data, v)
+}
 
 var ser Serializer
 
 func init() {
-    val := os.Getenv("DEBUG_JSON")
-    UseJSON, _ = strconv.ParseBool(val)
-	
-	if UseJSON {
-        ser = JSONSerializer{}
-    } else {
-        ser = MsgPackSerializer{}
-    }
+	val := os.Getenv("DEBUG_JSON")
+	useJSON := false
+
+	if val != "" {
+		parsed, err := strconv.ParseBool(val)
+		if err != nil {
+			log.Printf("Invalid DEBUG_JSON value %q, defaulting to MsgPack", val)
+		} else {
+			useJSON = parsed
+		}
+	}
+
+	if useJSON {
+		ser = JSONSerializer{}
+	} else {
+		ser = MsgPackSerializer{}
+	}
 }
