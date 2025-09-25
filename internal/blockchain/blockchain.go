@@ -13,8 +13,15 @@ import (
 )
 
 const (
-	LastHashKey    = "lh"
-	BlockChainName = "Moochain"
+	LastHashKeyKeyword          = "LastHash"
+	BlockChainNameKeyword       = "BlockChainName"
+	DebugChainKeyword           = "DebugChain"
+	BlockChainName              = "Moochain"
+	BlockKeyword                = "Block:"
+	GenesisBlockKeyword         = "GenesisBlockHash"
+	InitDebugChainRedisFunction = "init_debug_chain"
+	IterateChainRedisFunction   = "iterate_chain"
+	PrevBlockKeyword            = "Block:prev:"
 )
 
 var (
@@ -51,10 +58,15 @@ func InitBlockchain() (*Blockchain, error) {
 	redis := initRedis()
 
 	ctx := context.Background()
-	val, err := redis.Get(ctx, LastHashKey).Bytes()
+
+	val, err := redis.Get(ctx, LastHashKeyKeyword).Bytes()
 
 	if err != nil {
 		return nil, err
+	}
+
+	if DebugChain {
+		redis.Eval(ctx, InitDebugChainRedisFunction, []string{}, []string{})
 	}
 
 	bc := Blockchain{Database: redis, log: log}
@@ -70,13 +82,19 @@ func InitBlockchain() (*Blockchain, error) {
 		}
 
 		key := hex.EncodeToString(b.Hash)
-		_, err = bc.Database.Set(ctx, key, data, 0).Result()
+		_, err = bc.Database.Set(ctx, buildBlockKey(key), data, 0).Result()
 
 		if err != nil {
 			return nil, err
 		}
 
-		_, err = bc.Database.Set(ctx, LastHashKey, b.Hash, 0).Result()
+		_, err = bc.Database.Set(ctx, LastHashKeyKeyword, b.Hash, 0).Result()
+
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = bc.Database.Set(ctx, BlockChainNameKeyword, BlockChainName, 0).Result()
 
 		if err != nil {
 			return nil, err
@@ -102,7 +120,7 @@ func InitBlockchain() (*Blockchain, error) {
 func (bc *Blockchain) AddBlock(blockData string) error {
 	ctx := context.Background()
 
-	lh, err := bc.Database.Get(ctx, LastHashKey).Bytes()
+	lh, err := bc.Database.Get(ctx, LastHashKeyKeyword).Bytes()
 
 	if err != nil {
 		return err
@@ -121,13 +139,25 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 	}
 
 	key := hex.EncodeToString(newBlock.Hash)
-	_, err = bc.Database.Set(ctx, key, data, 0).Result()
+	_, err = bc.Database.Set(ctx, buildBlockKey(key), data, 0).Result()
 
 	if err != nil {
 		return err
 	}
 
-	_, err = bc.Database.Set(ctx, LastHashKey, newBlock.Hash, 0).Result()
+	_, err = bc.Database.Set(ctx, buildPrevBlockKey(key), lh, 0).Result()
+
+	if err != nil {
+		return err
+	}
+
+	_, err = bc.Database.Set(ctx, LastHashKeyKeyword, newBlock.Hash, 0).Result()
+
+	if err != nil {
+		return err
+	}
+
+	_, err = bc.Database.Set(ctx, LastHashKeyKeyword, newBlock.Hash, 0).Result()
 
 	if err != nil {
 		return err
@@ -161,4 +191,12 @@ func buildAddr() string {
 func configLog() *log.Logger {
 	return log.New(os.Stdout, "Moochain:", log.LstdFlags)
 
+}
+
+func buildBlockKey(hash string) string {
+	return BlockKeyword + hash
+}
+
+func buildPrevBlockKey(prev string) string {
+	return PrevBlockKeyword + prev
 }
