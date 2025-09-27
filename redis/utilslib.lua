@@ -8,8 +8,6 @@ local BLOCK_KEYWORD = "Block:"
 local PREV_BLOCK_HASH_KEYWORD = "Block:prev:"
 local LAST_HASH_KEYWORD = "LastHash"
 local DEBUG_CHAIN_KEYWORD = "DebugChain"
-local ITERATE_PAGE_SIZE = 500
-
 
 -- HELPER FUNCTIONS
 
@@ -58,29 +56,40 @@ local function init_debug_chain(keys, args)
 end
 
 -- key: {}
--- args: {cursorHash, count}
--- cursorHash = "" (empty string) to start from the chain tip (LastHash)
--- count      = number of blocks to fetch in this call
+-- ARGS:
+-- type: "height" or "hash"
+-- cursor: starting height (if type="height") or hash (if type="hash")
+-- count: number of blocks to fetch
 local function iterate_chain(keys, args)
-    local cursor = args[1]
-    local count  = tonumber(args[2])
+    local iterType = args[1]
+    local cursor = args[2]
+    local count = tonumber(args[3])
 
     if not count or count <= 0 then
-        return {err = "Invalid count"}
+        return redis.error_reply("Invalid count")
     end
-	
+
     local curr
-    if cursor == "" then
-        curr = redis.call('GET', LAST_HASH_KEYWORD)
-        if not curr then
-            return { "", {} } -- chain is empty
+    if iterType == "height" then
+        local height = tonumber(cursor)
+        if not height or height < 0 then
+            return redis.error_reply("Invalid height")
+        end
+        curr = redis.call('GET', 'BLOCK_HEIGHT:' .. height)
+        if not curr or curr == "" then
+            return { "", {}, 0 }
+        end
+    elseif iterType == "hash" then
+        if cursor == "" then
+            curr = redis.call('GET', 'LAST_HASH')
+            if not curr or curr == "" then
+                return { "", {}, 0 }
+            end
+        else
+            curr = cursor
         end
     else
-        -- move one step back so we don't return the cursor itself again
-        curr = redis.call('GET', PREV_BLOCK_HASH_KEYWORD .. cursor)
-        if not curr or curr == "" then
-            return { "", {} } -- reached genesis or invalid cursor
-        end
+        return redis.error_reply("Invalid iteration type")
     end
 
     local result = {}
@@ -88,15 +97,17 @@ local function iterate_chain(keys, args)
     while curr and fetched < count do
         table.insert(result, curr)
         fetched = fetched + 1
-        curr = redis.call('GET', PREV_BLOCK_HASH_KEYWORD .. curr)
+        curr = redis.call('GET', 'PREV_BLOCK_HASH:' .. curr)
         if not curr or curr == "" then break end
     end
 
-    local nextCursor = ""
-    if #result > 0 then
-        nextCursor = result[#result]
+    local more = 0
+    if curr and curr ~= "" then
+        more = 1
     end
-    return { nextCursor, result }
+
+    local nextCursor = curr or ""
+    return { nextCursor, result, more }
 end
 
 -- REGISTER FUNCTIONS

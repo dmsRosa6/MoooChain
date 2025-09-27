@@ -3,7 +3,6 @@ package blockchain
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"log"
 	"os"
@@ -52,10 +51,7 @@ type Blockchain struct {
 	log      *log.Logger
 }
 
-func InitBlockchain() (*Blockchain, error) {
-
-	log := configLog()
-	redis := initRedis()
+func InitBlockchain(redis *redis.Client, log *log.Logger) (*Blockchain, error) {
 
 	ctx := context.Background()
 
@@ -75,7 +71,7 @@ func InitBlockchain() (*Blockchain, error) {
 		log.Println("no blockchain found. creating new one...")
 
 		b := GenesisBlock()
-		data, err := json.Marshal(b)
+		data, err := b.ToJSON()
 
 		if err != nil {
 			return nil, err
@@ -102,7 +98,7 @@ func InitBlockchain() (*Blockchain, error) {
 
 		if DebugChain {
 
-			_, err = bc.Database.RPush(ctx, string(b.PrevHash)+":"+string(b.Hash)+":"+string(b.Data), BlockChainName).Result()
+			_, err = bc.Database.RPush(ctx, BlockChainName, data).Result()
 
 			if err != nil {
 				return nil, err
@@ -132,7 +128,7 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 
 	newBlock := CreateBlock(blockData, lh)
 
-	data, err := json.Marshal(newBlock)
+	data, err := newBlock.ToJSON()
 
 	if err != nil {
 		return err
@@ -157,14 +153,9 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 		return err
 	}
 
-	_, err = bc.Database.Set(ctx, LastHashKeyKeyword, newBlock.Hash, 0).Result()
-
-	if err != nil {
-		return err
-	}
 
 	if DebugChain {
-		_, err = bc.Database.RPush(ctx, string(newBlock.PrevHash)+":"+string(newBlock.Hash)+":"+string(newBlock.Data), BlockChainName).Result()
+		_, err = bc.Database.RPush(ctx, BlockChainName, data).Result()
 
 		if err != nil {
 			return err
@@ -172,25 +163,6 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 	}
 
 	return nil
-}
-
-func initRedis() *redis.Client {
-
-	client := redis.NewClient(&redis.Options{
-		Addr: buildAddr(),
-	})
-	return client
-}
-
-func buildAddr() string {
-	host := os.Getenv("REDIS_HOST")
-	port := os.Getenv("REDIS_PORT")
-	return host + ":" + port
-}
-
-func configLog() *log.Logger {
-	return log.New(os.Stdout, "Moochain:", log.LstdFlags)
-
 }
 
 func buildBlockKey(hash string) string {

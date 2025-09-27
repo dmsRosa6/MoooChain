@@ -1,11 +1,13 @@
 package blockchain
 
+import "encoding/json"
 
-type Block struct{
-	Data []byte
-	Hash []byte
-	PrevHash []byte
-	Nonce int
+
+type Block struct {
+    Data     []byte `json:"data"`
+    Hash     []byte `json:"hash"`
+    PrevHash []byte `json:"prev_hash"`
+    Nonce    int    `json:"nonce"`
 }
 
 func CreateBlock(data string, prevHash []byte) *Block{
@@ -25,4 +27,8 @@ func CreateBlock(data string, prevHash []byte) *Block{
 func GenesisBlock() *Block {
 	b := CreateBlock("Genesis",[]byte{})
 	return b
+}
+
+func (b *Block) ToJSON() ([]byte, error) {
+    return json.Marshal(b)
 }

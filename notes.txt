@@ -1,5 +1,5 @@
 - create commits instead, to rollback things on redis
-- start using the ser to dinammically serialize
+- For learning purposes use json
 - create cursor
 - add height
 - If i really want i could push the the prev block and the entries that result from a block to redis and with that i could just run a function with the~
