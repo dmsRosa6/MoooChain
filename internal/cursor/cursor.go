@@ -2,7 +2,7 @@ package cursor
 
 import (
 	"github.com/dmsRosa6/MoooChain/internal/blockchain"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 const(

@@ -8,6 +8,7 @@ import (
 type Command int
 
 const(
+	InvalidCommand Command = -1
 	CreateBlockChain Command = iota
 	AddBlock
 	IterateBlockChain
@@ -16,7 +17,7 @@ const(
 )
 
 var(
-	Commands = map[string]Command{
+	StringToCommand = map[string]Command{
 		"CREATEBLOCKCHAIN" : CreateBlockChain,
 		"ADDBLOCK" : AddBlock,
 		"ITERATEBLOCKCHAIN" : IterateBlockChain,
@@ -28,7 +29,7 @@ var(
 		"EXIT" : Exit,
 	}
 
-	CommandArgs = map[Command]int{
+	CommandNumberArgs = map[Command]int{
 		CreateBlockChain : 0,
 		AddBlock : 1,
 		IterateBlockChain : 0,
@@ -55,26 +56,28 @@ func NewParser() *Parser{
 }
 
 func (p *Parser) Parse(s string) (Command, []string, error){
-	tokens := strings.Split(s, " ")
-
-	if len(tokens) == 0 {
-		return -1, nil, fmt.Errorf("empty input")
+	s = strings.TrimSpace(s)
+	
+	if s == "" {
+		return InvalidCommand, nil, fmt.Errorf("empty input")
 	}
 
-	commandAsString := strings.ToUpper(tokens[0])
+	tokens := strings.Fields(s)
+
+	commandAsString := strings.ToUpper(strings.TrimSpace(tokens[0]))
 	args := tokens[1:]
 
 
-	command, ok := Commands[commandAsString]
+	command, ok := StringToCommand[commandAsString]
 
 	if !ok {
-		return -1, nil, fmt.Errorf("command %s is not a valid command", commandAsString)
+		return InvalidCommand, nil, fmt.Errorf("command is not valid: %s", commandAsString)
 	}
 
-	numberOfArgs := CommandArgs[command]
+	numberOfArgs := CommandNumberArgs[command]
 
 	if len(args) != numberOfArgs {
-		return -1, nil, 
+		return InvalidCommand, nil, 
 		fmt.Errorf("invalid number of arguments for %s operation. got: %d, expected: %d", 
 			CommandLongName[command], 
 			len(args),

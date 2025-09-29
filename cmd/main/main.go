@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"bufio"
@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	commands "github.com/dmsRosa6/MoooChain/internal/command"
+	"github.com/joho/godotenv"
 )
 
 var clear map[string]func()
@@ -26,6 +27,8 @@ func init() {
         cmd.Stdout = os.Stdout
         cmd.Run()
     }
+
+	godotenv.Load()
 }
 
 func CallClear() error{
@@ -33,7 +36,7 @@ func CallClear() error{
     if ok {
         value()	
 	} else {
-        return errors.New("Your platform is unsupported.")
+        return errors.New("your platform is unsupported.")
     }
 
 	return nil
@@ -47,7 +50,7 @@ func main(){
 	err := CallClear()
 	
 	if err != nil {
-		log.Fatal("error initiation blockchain. err : %s", err)
+		log.Fatalf("error initiation blockchain. err : %s", err)
 		return
 	}
 	
@@ -70,10 +73,15 @@ func main(){
 		text, _ := reader.ReadString('\n')
 		command, args, err := parser.Parse(text)
 		
+		if err != nil{
+			log.Print(err)
+			continue
+		}
+
 		err = executer.Execute(command,args)
 
 		if err != nil{
-			log.Printf("err : %s\n", err)
+			log.Print(err)
 		}
 
 	}

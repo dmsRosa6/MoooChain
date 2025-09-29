@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/dmsRosa6/MoooChain/internal/blockchain"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 type Executer struct {
@@ -23,6 +23,7 @@ func (e *Executer) Execute(command Command, args []string) error {
     case CreateBlockChain:
         log.Println("Executing:", CommandLongName[command])
 		redis := initRedis()
+		log.Println("Redis initialized")
 		bc, err := blockchain.InitBlockchain(redis,e.log)
 		
 		if err != nil {

@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -51,113 +51,86 @@ type Blockchain struct {
 	log      *log.Logger
 }
 
-func InitBlockchain(redis *redis.Client, log *log.Logger) (*Blockchain, error) {
-
+func InitBlockchain(r *redis.Client, log *log.Logger) (*Blockchain, error) {
 	ctx := context.Background()
 
-	val, err := redis.Get(ctx, LastHashKeyKeyword).Bytes()
-
+	val, err := getBytes(r, ctx, LastHashKeyKeyword)
 	if err != nil {
 		return nil, err
 	}
 
 	if DebugChain {
-		redis.Eval(ctx, InitDebugChainRedisFunction, []string{}, []string{})
+		r.Eval(ctx, InitDebugChainRedisFunction, []string{}, []string{})
 	}
 
-	bc := Blockchain{Database: redis, log: log}
+	bc := Blockchain{Database: r, log: log}
 
 	if val == nil {
 		log.Println("no blockchain found. creating new one...")
 
 		b := GenesisBlock()
 		data, err := b.ToJSON()
-
 		if err != nil {
 			return nil, err
 		}
 
 		key := hex.EncodeToString(b.Hash)
-		_, err = bc.Database.Set(ctx, buildBlockKey(key), data, 0).Result()
 
-		if err != nil {
+		if err := setKey(r, ctx, buildBlockKey(key), data); err != nil {
 			return nil, err
 		}
 
-		_, err = bc.Database.Set(ctx, LastHashKeyKeyword, b.Hash, 0).Result()
-
-		if err != nil {
+		if err := setKey(r, ctx, LastHashKeyKeyword, b.Hash); err != nil {
 			return nil, err
 		}
 
-		_, err = bc.Database.Set(ctx, BlockChainNameKeyword, BlockChainName, 0).Result()
-
-		if err != nil {
+		if err := setKey(r, ctx, BlockChainNameKeyword, BlockChainName); err != nil {
 			return nil, err
 		}
 
 		if DebugChain {
-
-			_, err = bc.Database.RPush(ctx, BlockChainName, data).Result()
-
-			if err != nil {
+			if _, err := r.RPush(ctx, BlockChainName, data).Result(); err != nil {
 				return nil, err
 			}
 		}
-
 	} else {
 		log.Println("blockchain found.")
-		bc.LastHash = []byte(val)
+		bc.LastHash = val
 	}
 
 	return &bc, nil
 }
-
 func (bc *Blockchain) AddBlock(blockData string) error {
 	ctx := context.Background()
 
-	lh, err := bc.Database.Get(ctx, LastHashKeyKeyword).Bytes()
-
+	lh, err := getBytes(bc.Database, ctx, LastHashKeyKeyword)
 	if err != nil {
 		return err
 	}
-
 	if lh == nil {
 		return ErrBlockchainNotFound
 	}
 
 	newBlock := CreateBlock(blockData, lh)
-
 	data, err := newBlock.ToJSON()
-
 	if err != nil {
 		return err
 	}
 
 	key := hex.EncodeToString(newBlock.Hash)
-	_, err = bc.Database.Set(ctx, buildBlockKey(key), data, 0).Result()
 
-	if err != nil {
+	if err := setKey(bc.Database, ctx, buildBlockKey(key), data); err != nil {
 		return err
 	}
-
-	_, err = bc.Database.Set(ctx, buildPrevBlockKey(key), lh, 0).Result()
-
-	if err != nil {
+	if err := setKey(bc.Database, ctx, buildPrevBlockKey(key), lh); err != nil {
 		return err
 	}
-
-	_, err = bc.Database.Set(ctx, LastHashKeyKeyword, newBlock.Hash, 0).Result()
-
-	if err != nil {
+	if err := setKey(bc.Database, ctx, LastHashKeyKeyword, newBlock.Hash); err != nil {
 		return err
 	}
-
 
 	if DebugChain {
-		_, err = bc.Database.RPush(ctx, BlockChainName, data).Result()
-
-		if err != nil {
+		if _, err := bc.Database.RPush(ctx, BlockChainName, data).Result(); err != nil {
 			return err
 		}
 	}
@@ -171,4 +144,17 @@ func buildBlockKey(hash string) string {
 
 func buildPrevBlockKey(prev string) string {
 	return PrevBlockKeyword + prev
+}
+
+func getBytes(r *redis.Client, ctx context.Context, key string) ([]byte, error) {
+	val, err := r.Get(ctx, key).Bytes()
+	if err == redis.Nil {
+		return nil, nil
+	}
+	return val, err
+}
+
+func setKey(r *redis.Client, ctx context.Context, key string, value any) error {
+	_, err := r.Set(ctx, key, value, 0).Result()
+	return err
 }
