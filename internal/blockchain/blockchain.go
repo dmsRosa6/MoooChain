@@ -5,9 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"log"
-	"os"
-	"strconv"
 
+	"github.com/dmsRosa6/MoooChain/internal/options"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -21,37 +20,22 @@ const (
 	InitDebugChainRedisFunction = "init_debug_chain"
 	IterateChainRedisFunction   = "iterate_chain"
 	PrevBlockKeyword            = "Block:prev:"
+	GetBlockByHeightRedisFunction = ""
 )
 
 var (
 	ErrBlockchainNotFound = errors.New("blockchain does not exist")
-	DebugChain            bool
 )
 
-func init() {
-	DebugChain = false
-
-	val := os.Getenv("DEBUG_CHAIN")
-
-	if val != "" {
-		convertedVal, err := strconv.ParseBool(val)
-
-		if err != nil {
-			log.Printf("Invalid DEBUG_CAHIN value %q, defaulting to FALSE", val)
-		} else {
-			DebugChain = convertedVal
-		}
-	}
-
-}
 
 type Blockchain struct {
 	LastHash []byte
 	Database *redis.Client
 	log      *log.Logger
+	options *options.Options
 }
 
-func InitBlockchain(r *redis.Client, log *log.Logger) (*Blockchain, error) {
+func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options) (*Blockchain, error) {
 	ctx := context.Background()
 
 	val, err := getBytes(r, ctx, LastHashKeyKeyword)
@@ -59,11 +43,11 @@ func InitBlockchain(r *redis.Client, log *log.Logger) (*Blockchain, error) {
 		return nil, err
 	}
 
-	if DebugChain {
+	if options.DebugChain {
 		r.Eval(ctx, InitDebugChainRedisFunction, []string{}, []string{})
 	}
 
-	bc := Blockchain{Database: r, log: log}
+	bc := Blockchain{Database: r, log: log, options: options}
 
 	if val == nil {
 		log.Println("no blockchain found. creating new one...")
@@ -88,7 +72,7 @@ func InitBlockchain(r *redis.Client, log *log.Logger) (*Blockchain, error) {
 			return nil, err
 		}
 
-		if DebugChain {
+		if options.DebugChain {
 			if _, err := r.RPush(ctx, BlockChainName, data).Result(); err != nil {
 				return nil, err
 			}
@@ -100,6 +84,7 @@ func InitBlockchain(r *redis.Client, log *log.Logger) (*Blockchain, error) {
 
 	return &bc, nil
 }
+
 func (bc *Blockchain) AddBlock(blockData string) error {
 	ctx := context.Background()
 
@@ -129,13 +114,19 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 		return err
 	}
 
-	if DebugChain {
+	if bc.options.DebugChain {
 		if _, err := bc.Database.RPush(ctx, BlockChainName, data).Result(); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (bc *Blockchain) GetBlockByHeight(height int){
+	context := context.Background()
+
+	bc.Database.Eval(context,,BlockChainName,nil)	
 }
 
 func buildBlockKey(hash string) string {

@@ -9,7 +9,8 @@ import (
 	"os/exec"
 	"runtime"
 
-	commands "github.com/dmsRosa6/MoooChain/internal/command"
+	"github.com/dmsRosa6/MoooChain/internal/commands"
+	"github.com/dmsRosa6/MoooChain/internal/options"
 	"github.com/joho/godotenv"
 )
 
@@ -46,17 +47,19 @@ func main(){
 
 	log := configLog()
 
-
 	err := CallClear()
 	
 	if err != nil {
 		log.Fatalf("error initiation blockchain. err : %s", err)
 		return
 	}
-	
+
+	option := options.InitOptions(log)
+	option.Print()
+
 	parser := commands.NewParser()
 	
-	executer := commands.NewExecuter(log)
+	executer := commands.NewExecuter(log, option)
 
 	if err != nil {
 		log.Fatal("error initiation blockchain. err : %s", err)

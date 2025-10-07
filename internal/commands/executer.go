@@ -6,16 +6,18 @@ import (
 	"os"
 
 	"github.com/dmsRosa6/MoooChain/internal/blockchain"
+	"github.com/dmsRosa6/MoooChain/internal/options"
 	"github.com/redis/go-redis/v9"
 )
 
 type Executer struct {
 	log *log.Logger
 	blockchain *blockchain.Blockchain
+	options *options.Options
 }
 
-func NewExecuter(l *log.Logger) *Executer {
-    return &Executer{log:l}
+func NewExecuter(l *log.Logger, options *options.Options) *Executer {
+    return &Executer{log:l, options: options}
 }
 
 func (e *Executer) Execute(command Command, args []string) error {
@@ -24,7 +26,7 @@ func (e *Executer) Execute(command Command, args []string) error {
         log.Println("Executing:", CommandLongName[command])
 		redis := initRedis()
 		log.Println("Redis initialized")
-		bc, err := blockchain.InitBlockchain(redis,e.log)
+		bc, err := blockchain.InitBlockchain(redis,e.log,e.options)
 		
 		if err != nil {
 			return err
@@ -47,7 +49,7 @@ func (e *Executer) Execute(command Command, args []string) error {
 			return err
 		}
 
-        return fmt.Errorf("not implemented")
+        return nil 
 
     case IterateBlockChain:
         log.Println("Executing:", CommandLongName[command])
