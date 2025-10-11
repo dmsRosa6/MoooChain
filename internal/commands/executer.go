@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -70,6 +71,14 @@ func (e *Executer) Execute(command Command, args []string) error {
         
 		return fmt.Errorf("not implemented")
 
+	case DestroyBlockChain:
+		if e.blockchain == nil {
+			return fmt.Errorf("blockchain not initialized")
+		}
+		ctx := context.Background()
+		e.blockchain.Database.FlushAll(ctx);
+		log.Println("Deleting...")
+		return nil
     case Exit:
 		if e.blockchain == nil{
 			return nil

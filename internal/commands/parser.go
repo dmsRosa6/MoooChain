@@ -10,6 +10,7 @@ type Command int
 const(
 	InvalidCommand Command = -1
 	CreateBlockChain Command = iota
+	DestroyBlockChain
 	AddBlock
 	IterateBlockChain
 	GetBlock
@@ -22,10 +23,12 @@ var(
 		"ADDBLOCK" : AddBlock,
 		"ITERATEBLOCKCHAIN" : IterateBlockChain,
 		"GETBLOCK" : GetBlock,
+		"DESTROYBLOCKCHAIN" : DestroyBlockChain,
 		"INIT" : CreateBlockChain,
 		"ADD" : AddBlock,
 		"ITERATE" : IterateBlockChain,
 		"GET" : GetBlock,
+		"DESTROY" : DestroyBlockChain,
 		"EXIT" : Exit,
 	}
 
@@ -35,6 +38,7 @@ var(
 		IterateBlockChain : 0,
 		GetBlock : 1,
 		Exit : 0,
+		DestroyBlockChain: 0,
 	}
 
 	CommandLongName = map[Command]string{
@@ -42,6 +46,7 @@ var(
 		AddBlock : "Add Block",
 		IterateBlockChain : "Iterate BlockChain",
 		GetBlock : "Get Block",
+		DestroyBlockChain : "Destroy BlockChain",
 		Exit : "Exit",
 	}
 )

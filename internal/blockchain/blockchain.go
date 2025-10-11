@@ -2,10 +2,10 @@ package blockchain
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"log"
 
+	"github.com/dmsRosa6/MoooChain/internal/codec"
 	"github.com/dmsRosa6/MoooChain/internal/options"
 	"github.com/redis/go-redis/v9"
 )
@@ -15,11 +15,9 @@ const (
 	BlockChainNameKeyword       = "BlockChainName"
 	DebugChainKeyword           = "DebugChain"
 	BlockChainName              = "Moochain"
-	BlockKeyword                = "Block:"
 	GenesisBlockKeyword         = "GenesisBlockHash"
 	InitDebugChainRedisFunction = "init_debug_chain"
 	IterateChainRedisFunction   = "iterate_chain"
-	PrevBlockKeyword            = "Block:prev:"
 	GetBlockByHeightRedisFunction = ""
 )
 
@@ -27,12 +25,11 @@ var (
 	ErrBlockchainNotFound = errors.New("blockchain does not exist")
 )
 
-
 type Blockchain struct {
 	LastHash []byte
 	Database *redis.Client
 	log      *log.Logger
-	options *options.Options
+	options  *options.Options
 }
 
 func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options) (*Blockchain, error) {
@@ -44,7 +41,7 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options) 
 	}
 
 	if options.DebugChain {
-		r.Eval(ctx, InitDebugChainRedisFunction, []string{}, []string{})
+		_ = r.Eval(ctx, InitDebugChainRedisFunction, []string{}, []string{})
 	}
 
 	bc := Blockchain{Database: r, log: log, options: options}
@@ -53,27 +50,25 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options) 
 		log.Println("no blockchain found. creating new one...")
 
 		b := GenesisBlock()
-		data, err := b.ToJSON()
+		data, err := b.MarshalJSON()
 		if err != nil {
 			return nil, err
 		}
 
-		key := hex.EncodeToString(b.Hash)
-
-		if err := setKey(r, ctx, buildBlockKey(key), data); err != nil {
+		if err := setBytes(r, ctx, codec.BuildBlockKey(b.Hash), data); err != nil {
 			return nil, err
 		}
 
-		if err := setKey(r, ctx, LastHashKeyKeyword, b.Hash); err != nil {
+		if err := setString(r, ctx, LastHashKeyKeyword, string(b.Hash)); err != nil {
 			return nil, err
 		}
 
-		if err := setKey(r, ctx, BlockChainNameKeyword, BlockChainName); err != nil {
+		if err := setString(r, ctx, BlockChainNameKeyword, BlockChainName); err != nil {
 			return nil, err
 		}
 
 		if options.DebugChain {
-			if _, err := r.RPush(ctx, BlockChainName, data).Result(); err != nil {
+			if _, err := r.RPush(ctx, BlockChainName, string(data)).Result(); err != nil {
 				return nil, err
 			}
 		}
@@ -97,44 +92,32 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 	}
 
 	newBlock := CreateBlock(blockData, lh)
-	data, err := newBlock.ToJSON()
+	data, err := newBlock.MarshalJSON()
 	if err != nil {
 		return err
 	}
 
-	key := hex.EncodeToString(newBlock.Hash)
+	if err := setBytes(bc.Database, ctx, codec.BuildBlockKey(newBlock.Hash), data); err != nil {
+		return err
+	}
 
-	if err := setKey(bc.Database, ctx, buildBlockKey(key), data); err != nil {
+	if err := setBytes(bc.Database, ctx, codec.BuildPrevBlockKey(newBlock.Hash), newBlock.PrevHash); err != nil {
 		return err
 	}
-	if err := setKey(bc.Database, ctx, buildPrevBlockKey(key), lh); err != nil {
-		return err
-	}
-	if err := setKey(bc.Database, ctx, LastHashKeyKeyword, newBlock.Hash); err != nil {
+
+	if err := setBytes(bc.Database, ctx, LastHashKeyKeyword, newBlock.Hash); err != nil {
 		return err
 	}
 
 	if bc.options.DebugChain {
-		if _, err := bc.Database.RPush(ctx, BlockChainName, data).Result(); err != nil {
+		if _, err := bc.Database.RPush(ctx, BlockChainName, string(data)).Result(); err != nil {
 			return err
 		}
 	}
 
+	bc.LastHash = newBlock.Hash
+
 	return nil
-}
-
-func (bc *Blockchain) GetBlockByHeight(height int){
-	context := context.Background()
-
-	bc.Database.Eval(context,,BlockChainName,nil)	
-}
-
-func buildBlockKey(hash string) string {
-	return BlockKeyword + hash
-}
-
-func buildPrevBlockKey(prev string) string {
-	return PrevBlockKeyword + prev
 }
 
 func getBytes(r *redis.Client, ctx context.Context, key string) ([]byte, error) {
@@ -145,7 +128,10 @@ func getBytes(r *redis.Client, ctx context.Context, key string) ([]byte, error) 
 	return val, err
 }
 
-func setKey(r *redis.Client, ctx context.Context, key string, value any) error {
-	_, err := r.Set(ctx, key, value, 0).Result()
-	return err
+func setBytes(r *redis.Client, ctx context.Context, key string, value []byte) error {
+	return r.Set(ctx, key, value, 0).Err()
+}
+
+func setString(r *redis.Client, ctx context.Context, key string, value string) error {
+	return r.Set(ctx, key, value, 0).Err()
 }

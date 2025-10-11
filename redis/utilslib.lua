@@ -11,6 +11,16 @@ local DEBUG_CHAIN_KEYWORD = "DebugChain"
 
 -- HELPER FUNCTIONS
 
+local function tohex(data)
+    if not data or data == "" then return "" end
+    local t = {}
+    for i = 1, #data do
+        t[i] = string.format("%02x", string.byte(data, i))
+    end
+    return table.concat(t)
+end
+
+
 local function build_chain()
 
 	local lastHash = redis.call("GET", LAST_HASH_KEYWORD)
@@ -57,47 +67,37 @@ end
 
 -- key: {}
 -- ARGS:
--- type: "height" or "hash"
--- cursor: starting height (if type="height") or hash (if type="hash")
+-- lastHash: starting hash
 -- count: number of blocks to fetch
 local function iterate_chain(keys, args)
-    local iterType = args[1]
-    local cursor = args[2]
-    local count = tonumber(args[3])
+    
+    if #args ~= 2 then 
+        return redis.error_reply("Invalid number of args")
+    end
+    
+    local lastHash = args[1]
+    local count = tonumber(args[2])
 
     if not count or count <= 0 then
         return redis.error_reply("Invalid count")
     end
 
-    local curr
-    if iterType == "height" then
-        local height = tonumber(cursor)
-        if not height or height < 0 then
-            return redis.error_reply("Invalid height")
-        end
-        curr = redis.call('GET', 'BLOCK_HEIGHT:' .. height)
+    local curr = lastHash
+
+    if lastHash == "" then
+        curr = redis.call('GET', LAST_HASH_KEYWORD)
         if not curr or curr == "" then
             return { "", {}, 0 }
         end
-    elseif iterType == "hash" then
-        if cursor == "" then
-            curr = redis.call('GET', 'LAST_HASH')
-            if not curr or curr == "" then
-                return { "", {}, 0 }
-            end
-        else
-            curr = cursor
-        end
-    else
-        return redis.error_reply("Invalid iteration type")
     end
 
     local result = {}
     local fetched = 0
+    curr = tohex(curr)
     while curr and fetched < count do
         table.insert(result, curr)
         fetched = fetched + 1
-        curr = redis.call('GET', 'PREV_BLOCK_HASH:' .. curr)
+        curr = tohex(redis.call('GET', PREV_BLOCK_HASH_KEYWORD .. curr))
         if not curr or curr == "" then break end
     end
 
@@ -106,8 +106,8 @@ local function iterate_chain(keys, args)
         more = 1
     end
 
-    local nextCursor = curr or ""
-    return { nextCursor, result, more }
+    local nextHash = curr or ""
+    return { nextHash, result, more }
 end
 
 -- REGISTER FUNCTIONS
