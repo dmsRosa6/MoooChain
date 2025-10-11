@@ -30,6 +30,7 @@ func init() {
     }
 
 	godotenv.Load()
+	
 }
 
 func CallClear() error{
@@ -44,13 +45,13 @@ func CallClear() error{
 }
 
 func main(){
-
+	
 	log := configLog()
 
 	err := CallClear()
 	
 	if err != nil {
-		log.Fatalf("error initiation blockchain. err : %s", err)
+		log.Fatalf("error initiation clearing screen. err : %s", err)
 		return
 	}
 
@@ -62,12 +63,11 @@ func main(){
 	executer := commands.NewExecuter(log, option)
 
 	if err != nil {
-		log.Fatal("error initiation blockchain. err : %s", err)
+		log.Fatal("error initiation command executer. err : %s", err)
 		return
 	}
 
 	run := true
-	fmt.Println("**Moochain**")
 
 	for run {
 

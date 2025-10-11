@@ -14,20 +14,21 @@ import (
 type Executer struct {
 	log *log.Logger
 	blockchain *blockchain.Blockchain
+	redis *redis.Client
 	options *options.Options
 }
 
 func NewExecuter(l *log.Logger, options *options.Options) *Executer {
-    return &Executer{log:l, options: options}
+	redis := initRedis()
+	log.Println("Redis initialized")
+    return &Executer{log:l, options: options, redis: redis}
 }
 
 func (e *Executer) Execute(command Command, args []string) error {
     switch command {
     case CreateBlockChain:
         log.Println("Executing:", CommandLongName[command])
-		redis := initRedis()
-		log.Println("Redis initialized")
-		bc, err := blockchain.InitBlockchain(redis,e.log,e.options)
+		bc, err := blockchain.InitBlockchain(e.redis,e.log,e.options)
 		
 		if err != nil {
 			return err
@@ -72,11 +73,8 @@ func (e *Executer) Execute(command Command, args []string) error {
 		return fmt.Errorf("not implemented")
 
 	case DestroyBlockChain:
-		if e.blockchain == nil {
-			return fmt.Errorf("blockchain not initialized")
-		}
 		ctx := context.Background()
-		e.blockchain.Database.FlushAll(ctx);
+		e.redis.FlushAll(ctx);
 		log.Println("Deleting...")
 		return nil
     case Exit:
