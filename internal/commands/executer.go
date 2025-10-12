@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/dmsRosa6/MoooChain/internal/blockchain"
-	"github.com/dmsRosa6/MoooChain/internal/options"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -15,10 +14,10 @@ type Executer struct {
 	log *log.Logger
 	blockchain *blockchain.Blockchain
 	redis *redis.Client
-	options *options.Options
+	options *Options
 }
 
-func NewExecuter(l *log.Logger, options *options.Options) *Executer {
+func NewExecuter(l *log.Logger, options *Options) *Executer {
 	redis := initRedis()
 	log.Println("Redis initialized")
     return &Executer{log:l, options: options, redis: redis}

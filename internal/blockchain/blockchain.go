@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 
-	"github.com/dmsRosa6/MoooChain/internal/codec"
 	"github.com/dmsRosa6/MoooChain/internal/options"
 	"github.com/redis/go-redis/v9"
 )
@@ -55,7 +54,7 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options) 
 			return nil, err
 		}
 
-		if err := setBytes(r, ctx, codec.BuildBlockKey(b.Hash), data); err != nil {
+		if err := setBytes(r, ctx, BuildBlockKey(b.Hash), data); err != nil {
 			return nil, err
 		}
 
@@ -97,11 +96,11 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 		return err
 	}
 
-	if err := setBytes(bc.Database, ctx, codec.BuildBlockKey(newBlock.Hash), data); err != nil {
+	if err := setBytes(bc.Database, ctx, BuildBlockKey(newBlock.Hash), data); err != nil {
 		return err
 	}
 
-	if err := setBytes(bc.Database, ctx, codec.BuildPrevBlockKey(newBlock.Hash), newBlock.PrevHash); err != nil {
+	if err := setBytes(bc.Database, ctx, BuildPrevBlockKey(newBlock.Hash), newBlock.PrevHash); err != nil {
 		return err
 	}
 
@@ -118,6 +117,13 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 	bc.LastHash = newBlock.Hash
 
 	return nil
+}
+
+
+func (bc *Blockchain) IterateBlockChain() (*BlockIterator,error) {
+	ite := NewBlockIterator(*bc.Database)
+
+	return ite,nil
 }
 
 func getBytes(r *redis.Client, ctx context.Context, key string) ([]byte, error) {
