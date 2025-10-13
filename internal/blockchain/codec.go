@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-func ParseIterateChainReply(reply interface{}) (nextHash []byte, items []Block, more bool, err error) {
+func ParseIterateChainReply(reply any) (nextHash []byte, items []Block, more bool, err error) {
 	arr, ok := reply.([]any)
 	if !ok {
 		err = errors.New("unexpected reply type, expected array")

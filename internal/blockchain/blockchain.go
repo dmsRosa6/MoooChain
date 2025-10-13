@@ -110,7 +110,11 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 }
 
 func (bc *Blockchain) IterateBlockChain() (*BlockIterator, error) {
-	ite := NewBlockIterator(bc.Database)
+	ite, err := NewBlockIterator(bc.Database)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return ite, nil
 }

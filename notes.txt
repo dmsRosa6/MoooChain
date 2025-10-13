@@ -1,4 +1,3 @@
 - create commits instead, to rollback things on redis
-- create cursor
 - If i really want i could push the the prev block and the entries that result from a block to redis and with that i could just run a function with the~
   current hash and it will set the last hash, puts the block, its prev... 
