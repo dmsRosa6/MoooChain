@@ -15,24 +15,22 @@ type BlockIterator struct{
 	blocks []Block
 	nextHash []byte
 	index int
-	client redis.Client
 	capacity int
 	HasNextPage bool
 	redis *redis.Client
 }
 
-func NewBlockIteratorWithCapacity(c redis.Client, capacity int) *BlockIterator{
-	blockIterator := &BlockIterator{client: c, nextHash: []byte(""), capacity: capacity}
+func NewBlockIteratorWithCapacity(c *redis.Client, capacity int) *BlockIterator{
+	blockIterator := &BlockIterator{redis: c, nextHash: []byte(""), capacity: capacity}
 	blockIterator.populate()
 
 	return blockIterator
 }
 
 
-func NewBlockIterator(c redis.Client) *BlockIterator{
-	blockIterator := &BlockIterator{client: c, nextHash: []byte(""),capacity: defaultCapacity}
+func NewBlockIterator(c *redis.Client) *BlockIterator{
+	blockIterator := &BlockIterator{redis: c, nextHash: []byte(""),capacity: defaultCapacity}
 	blockIterator.populate()
-
 	return blockIterator
 }
 
@@ -40,6 +38,10 @@ func (c *BlockIterator) verifyIfPopulateNeeded(){
 	if c.index < len(c.blocks) && c.HasNextPage{
 		c.populate()
 	}
+}
+
+func (c *BlockIterator) HasNext() bool{
+	return c.index < len(c.blocks) || c.HasNextPage
 }
 
 func (c *BlockIterator) Next() Block{
@@ -77,7 +79,7 @@ func (c *BlockIterator) NextRange(num int) []Block{
 func (c *BlockIterator) populate() error {
 	ctx := context.Background()
 
-	res, err := c.redis.Do(ctx, "FCALL", "iterate_chain", 0, c.nextHash, strconv.Itoa(c.capacity)).Result()
+	res, err := c.redis.FCall(ctx, "iterate_chain", []string{}, c.nextHash, strconv.Itoa(c.capacity)).Result()
 	if err != nil {
 		return err
 	}

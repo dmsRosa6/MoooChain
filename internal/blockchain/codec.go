@@ -29,7 +29,7 @@ func BuildPrevBlockKey(hash []byte) string {
 }
 
 func ParseIterateChainReply(reply interface{}) (nextHash []byte, items []Block, more bool, err error) {
-	arr, ok := reply.([]interface{})
+	arr, ok := reply.([]any)
 	if !ok {
 		err = errors.New("unexpected reply type, expected array")
 		return

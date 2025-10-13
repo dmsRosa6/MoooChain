@@ -49,10 +49,9 @@ func main(){
 	log := configLog()
 
 	err := CallClear()
-	
+
 	if err != nil {
-		log.Fatalf("error initiation clearing screen. err : %s", err)
-		return
+		log.Fatal(err)
 	}
 
 	option := options.InitOptions(log)
@@ -62,15 +61,9 @@ func main(){
 	
 	executer := commands.NewExecuter(log, option)
 
-	if err != nil {
-		log.Fatal("error initiation command executer. err : %s", err)
-		return
-	}
-
 	run := true
-
+	
 	for run {
-
 		fmt.Print("> ")
 		reader := bufio.NewReader(os.Stdin)
 		text, _ := reader.ReadString('\n')

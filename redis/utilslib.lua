@@ -95,7 +95,8 @@ local function iterate_chain(keys, args)
     local fetched = 0
     curr = tohex(curr)
     while curr and fetched < count do
-        table.insert(result, curr)
+        local item = redis.call('GET', BLOCK_KEYWORD .. curr)
+        table.insert(result, item)
         fetched = fetched + 1
         curr = tohex(redis.call('GET', PREV_BLOCK_HASH_KEYWORD .. curr))
         if not curr or curr == "" then break end

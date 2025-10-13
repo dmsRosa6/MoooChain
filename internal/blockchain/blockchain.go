@@ -121,7 +121,7 @@ func (bc *Blockchain) AddBlock(blockData string) error {
 
 
 func (bc *Blockchain) IterateBlockChain() (*BlockIterator,error) {
-	ite := NewBlockIterator(*bc.Database)
+	ite := NewBlockIterator(bc.Database)
 
 	return ite,nil
 }
