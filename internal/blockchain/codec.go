@@ -7,27 +7,6 @@ import (
 	"fmt"
 )
 
-const (
-	BlockKeyword     = "Block:"
-	PrevBlockKeyword = "Block:prev:"
-)
-
-func HexEncode(b []byte) string {
-	return hex.EncodeToString(b)
-}
-
-func HexDecode(s string) ([]byte, error) {
-	return hex.DecodeString(s)
-}
-
-func BuildBlockKey(hash []byte) string {
-	return BlockKeyword + HexEncode(hash)
-}
-
-func BuildPrevBlockKey(hash []byte) string {
-	return PrevBlockKeyword + HexEncode(hash)
-}
-
 func ParseIterateChainReply(reply interface{}) (nextHash []byte, items []Block, more bool, err error) {
 	arr, ok := reply.([]any)
 	if !ok {
