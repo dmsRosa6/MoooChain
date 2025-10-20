@@ -7,44 +7,54 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const(
+const (
 	defaultCapacity = 50
 )
 
-type BlockIterator struct{
-	blocks []Block
-	nextHash []byte
-	index int
-	capacity int
+type BlockIterator struct {
+	blocks      []Block
+	nextHash    []byte
+	index       int
+	capacity    int
 	HasNextPage bool
-	redis *redis.Client
+	redis       *redis.Client
 }
 
-func NewBlockIteratorWithCapacity(c *redis.Client, capacity int) *BlockIterator{
+func NewBlockIteratorWithCapacity(c *redis.Client, capacity int) (*BlockIterator, error) {
 	blockIterator := &BlockIterator{redis: c, nextHash: []byte(""), capacity: capacity}
-	blockIterator.populate()
+	err := blockIterator.populate()
 
-	return blockIterator
-}
-
-
-func NewBlockIterator(c *redis.Client) *BlockIterator{
-	blockIterator := &BlockIterator{redis: c, nextHash: []byte(""),capacity: defaultCapacity}
-	blockIterator.populate()
-	return blockIterator
-}
-
-func (c *BlockIterator) verifyIfPopulateNeeded(){
-	if c.index < len(c.blocks) && c.HasNextPage{
-		c.populate()
+	if err != nil {
+		return nil, err
 	}
+
+	return blockIterator, nil
 }
 
-func (c *BlockIterator) HasNext() bool{
+func NewBlockIterator(c *redis.Client) (*BlockIterator, error) {
+	blockIterator := &BlockIterator{redis: c, nextHash: []byte(""), capacity: defaultCapacity}
+	err := blockIterator.populate()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return blockIterator, nil
+}
+
+func (c *BlockIterator) verifyIfPopulateNeeded() error {
+	if c.index < len(c.blocks) && c.HasNextPage {
+		return c.populate()
+	}
+
+	return nil
+}
+
+func (c *BlockIterator) HasNext() bool {
 	return c.index < len(c.blocks) || c.HasNextPage
 }
 
-func (c *BlockIterator) Next() Block{
+func (c *BlockIterator) Next() Block {
 	c.verifyIfPopulateNeeded()
 
 	if c.index < len(c.blocks) {
@@ -56,20 +66,20 @@ func (c *BlockIterator) Next() Block{
 	return block
 }
 
-func (c *BlockIterator) NextRange(num int) []Block{
+func (c *BlockIterator) NextRange(num int) []Block {
 	var blocks []Block
-	if c.index + num > len(c.blocks) {
+	if c.index+num > len(c.blocks) {
 		blocks = c.blocks[c.index:]
 		remain := num - len(blocks)
-		c.index = len(c.blocks) 
+		c.index = len(c.blocks)
 		c.verifyIfPopulateNeeded()
 		if c.index < len(c.blocks) {
 			return blocks
 		}
-		
+
 		blocks = append(blocks, c.blocks[c.index:c.index+remain]...)
-	}else{
-		blocks = c.blocks[c.index:c.index+num]
+	} else {
+		blocks = c.blocks[c.index : c.index+num]
 		c.index += num
 	}
 
@@ -95,4 +105,3 @@ func (c *BlockIterator) populate() error {
 
 	return nil
 }
-
