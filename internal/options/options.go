@@ -8,11 +8,13 @@ import (
 
 type Options struct {
 	DebugChain bool
+	CleanupChain bool
 	log *log.Logger
 }
 
 func InitOptions(log *log.Logger) *Options{
 	debugChain := false
+	cleanup := false
 
 	val := os.Getenv("DEBUG_CHAIN")
 	
@@ -27,8 +29,20 @@ func InitOptions(log *log.Logger) *Options{
 
 	}
 
+	val = os.Getenv("CLEANUP_DB")
+	if val != "" {
+		convertedVal, err := strconv.ParseBool(val)
+
+		if err != nil {
+			log.Printf("Invalid CLEANUP_DB value %q, defaulting to FALSE", val)
+		} else {
+			cleanup = convertedVal
+		}
+
+	}
 	return &Options{
 		DebugChain: debugChain,
+		CleanupChain: cleanup,
 		log: log,
 	}
 }

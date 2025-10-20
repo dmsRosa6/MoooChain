@@ -61,8 +61,12 @@ func main(){
 	
 	executer := commands.NewExecuter(log, option)
 
-	run := true
+	if option.CleanupChain {
+		defer executer.CleanupChain()
+	}
 	
+	run := true
+
 	for run {
 		fmt.Print("> ")
 		reader := bufio.NewReader(os.Stdin)

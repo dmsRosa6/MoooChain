@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -96,6 +97,20 @@ func (e *Executer) Execute(command Command, args []string) error {
     }
 }
 
+func (e *Executer) CleanupChain() error{
+	if e.blockchain == nil {
+		return errors.New("blockchain null on chain cleanup operation.")
+	}
+
+	if e.blockchain.Database == nil {
+		return errors.New("db client null on chain cleanup operation.")
+	}
+	ctx := context.Background()
+
+	e.blockchain.Database.FlushAll(ctx)
+	
+	return nil 
+}
 func initRedis() *redis.Client {
 
 	client := redis.NewClient(&redis.Options{
