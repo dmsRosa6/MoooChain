@@ -1,17 +1,22 @@
 package blockchain
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"log"
 
 	"github.com/dmsRosa6/MoooChain/internal/options"
 	"github.com/dmsRosa6/MoooChain/internal/redisutils"
+	"github.com/dmsRosa6/MoooChain/internal/transaction"
 	"github.com/redis/go-redis/v9"
 )
 
 var (
 	ErrBlockchainNotFound = errors.New("blockchain does not exist")
+	GenesisData = "Genesis"
 )
 
 type Blockchain struct {
@@ -21,7 +26,7 @@ type Blockchain struct {
 	options  *options.Options
 }
 
-func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options) (*Blockchain, error) {
+func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options, addr string) (*Blockchain, error) {
 	ctx := context.Background()
 
 	val, err := getBytes(r, ctx, redisutils.LastHashKeyKeyword)
@@ -37,14 +42,29 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options) 
 
 	if val == nil {
 		log.Println("no blockchain found. creating new one...")
+		var encoded bytes.Buffer
+		encoder := gob.NewEncoder(&encoded)
+		
+		tx, err := transaction.CreateMintTx(addr, GenesisData)
+		
+		if err != nil {
+			return nil, err
+		}
+		
+		b := GenesisBlock(tx)
+		jsonEncoded, err := json.Marshal(b)
 
-		b := GenesisBlock()
-		data, err := b.MarshalJSON()
 		if err != nil {
 			return nil, err
 		}
 
-		if err := setBytes(r, ctx, redisutils.BuildBlockKey(b.Hash), data); err != nil {
+		err = encoder.Encode(b)
+	
+		if err != nil {
+			return nil, err
+		}
+
+		if err := setBytes(r, ctx, redisutils.BuildBlockKey(b.Hash), encoded.Bytes()); err != nil {
 			return nil, err
 		}
 
@@ -57,7 +77,7 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options) 
 		}
 
 		if options.DebugChain {
-			if _, err := r.RPush(ctx, redisutils.BlockChainName, string(data)).Result(); err != nil {
+			if _, err := r.RPush(ctx, redisutils.BlockChainName, jsonEncoded).Result(); err != nil {
 				return nil, err
 			}
 		}
@@ -69,19 +89,31 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options) 
 	return &bc, nil
 }
 
-func (bc *Blockchain) AddBlock(blockData string) error {
+func (bc *Blockchain) AddBlock(transactions []*transaction.Transaction) error {
 	ctx := context.Background()
 
 	lh, err := getBytes(bc.Database, ctx, redisutils.LastHashKeyKeyword)
+	
 	if err != nil {
 		return err
 	}
+	
 	if lh == nil {
 		return ErrBlockchainNotFound
 	}
 
-	newBlock := CreateBlock(blockData, lh)
-	data, err := newBlock.MarshalJSON()
+	var encoded bytes.Buffer
+	encoder := gob.NewEncoder(&encoded)
+	
+	newBlock := CreateBlock(transactions, lh)
+	data, err := json.Marshal(newBlock)
+	
+	if err != nil {
+		return err
+	}
+
+	err = encoder.Encode(newBlock)
+
 	if err != nil {
 		return err
 	}

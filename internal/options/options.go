@@ -12,8 +12,10 @@ type Options struct {
 	log *log.Logger
 }
 
+//eventually this should be a env variable exported on program start or something
+// TODO not working
 func InitOptions(log *log.Logger) *Options{
-	debugChain := false
+	debugChain := true
 	cleanup := false
 
 	val := os.Getenv("DEBUG_CHAIN")

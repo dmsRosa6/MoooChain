@@ -1,22 +1,23 @@
 package blockchain
 
 import (
-	"encoding/hex"
-	"encoding/json"
-	"fmt"
+	"bytes"
+	"crypto/sha256"
+
+	"github.com/dmsRosa6/MoooChain/internal/transaction"
 )
 
 
 type Block struct {
-    Data     []byte `json:"data"`
+    Data     []*transaction.Transaction `json:"data"`
     Hash     []byte `json:"hash"`
     PrevHash []byte `json:"prev_hash"`
     Nonce    int    `json:"nonce"`
 }
 
-func CreateBlock(data string, prevHash []byte) *Block{
+func CreateBlock(txs []*transaction.Transaction, prevHash []byte) *Block{
 	block := Block{
-		Data: []byte(data),
+		Data: txs,
 		PrevHash: prevHash,
 		Nonce: 0,
 	}
@@ -28,60 +29,20 @@ func CreateBlock(data string, prevHash []byte) *Block{
 	return &block
 }
 
-func GenesisBlock() *Block {
-	b := CreateBlock("Genesis",[]byte{})
+func GenesisBlock(mintTx *transaction.Transaction) *Block {
+	b := CreateBlock([]*transaction.Transaction{mintTx},[]byte{})
 	return b
 }
 
-func (b *Block) MarshalJSON() ([]byte, error) {
-    return json.Marshal(struct {
-        Data     string `json:"data"`
-        Hash     string `json:"hash"`
-        PrevHash string `json:"prev_hash"`
-        Nonce    int    `json:"nonce"`
-    }{
-        Data:     string(b.Data),
-        Hash:     hex.EncodeToString(b.Hash),
-        PrevHash: hex.EncodeToString(b.PrevHash),
-        Nonce:    b.Nonce,
-    })
-}
+func (b *Block) HashTransactions() []byte{
+	var txHashes [][]byte
+	var txHash [32]byte
 
-func (b *Block) UnmarshalJSON(data []byte) error {
-	aux := struct {
-		Data     string `json:"data"`
-		Hash     string `json:"hash"`
-		PrevHash string `json:"prev_hash"`
-		Nonce    int    `json:"nonce"`
-	}{}
-
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
+	for _, tx := range b.Data{
+		txHashes = append(txHashes, tx.ID)
 	}
 
-	var (
-		hashBytes     []byte
-		prevHashBytes []byte
-		err           error
-	)
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
 
-	if aux.Hash != "" {
-		hashBytes, err = hex.DecodeString(aux.Hash)
-		if err != nil {
-			return fmt.Errorf("invalid hex in hash: %w", err)
-		}
-	}
-
-	if aux.PrevHash != "" {
-		prevHashBytes, err = hex.DecodeString(aux.PrevHash)
-		if err != nil {
-			return fmt.Errorf("invalid hex in prev_hash: %w", err)
-		}
-	}
-
-	b.Data = []byte(aux.Data)
-	b.Hash = hashBytes
-	b.PrevHash = prevHashBytes
-	b.Nonce = aux.Nonce
-	return nil
+	return txHash[:]
 }

@@ -1,6 +1,11 @@
 package transaction
 
-import "fmt"
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/gob"
+	"fmt"
+)
 
 type Transaction struct {
 	ID []byte
@@ -19,8 +24,7 @@ type TxInput struct{
 	Sig string
 }
 
-
-func BaseTx(to, data string) (*Transaction, error){
+func CreateMintTx(to, data string) (*Transaction, error){
 	if data == "" {
 		data = fmt.Sprintf("to %s", to)
 	}
@@ -41,7 +45,7 @@ func BaseTx(to, data string) (*Transaction, error){
 	return &tx, nil
 }
 
-func (tx *Transaction) IsBaseTx() bool{
+func (tx *Transaction) IsMintTx() bool{
 	return len(tx.Inputs) == 1 && len(tx.Inputs[0].ID) == 0 && tx.Inputs[0].Out == -1
 }
 
@@ -51,4 +55,21 @@ func (in *TxInput) CanUnlock(data string) bool{
 
 func (out *TxOutput) CanBeLocked(data string) bool{
 	return out.PubKey == data
+}
+
+func (tx *Transaction) SetId() error{
+	var encoded bytes.Buffer
+	var hash [32]byte
+
+	encode := gob.NewEncoder(&encoded)
+	err := encode.Encode(tx)
+	
+	if err != nil {
+		return err
+	}
+
+	hash = sha256.Sum256(encoded.Bytes())
+	tx.ID = hash[:]
+
+	return nil
 }

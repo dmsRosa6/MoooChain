@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/dmsRosa6/MoooChain/internal/commands"
 	"github.com/dmsRosa6/MoooChain/internal/options"
+	"github.com/dmsRosa6/MoooChain/internal/redisutils"
 	"github.com/joho/godotenv"
 )
 
@@ -38,7 +40,7 @@ func CallClear() error{
     if ok {
         value()	
 	} else {
-        return errors.New("your platform is unsupported.")
+        return errors.New("your platform is unsupported")
     }
 
 	return nil
@@ -56,10 +58,18 @@ func main(){
 
 	option := options.InitOptions(log)
 	option.Print()
+	r := redisutils.InitRedis();
+
+	ctx := context.Background()
+	_, err = r.Ping(ctx).Result()
+
+	if err != nil {
+		log.Fatalf("Redis was not initialized")
+		return
+	}
 
 	parser := commands.NewParser()
-	
-	executer := commands.NewExecuter(log, option)
+	executer := commands.NewExecuter(log, option, r)
 
 	if option.CleanupChain {
 		defer executer.CleanupChain()

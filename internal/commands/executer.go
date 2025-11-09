@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/dmsRosa6/MoooChain/internal/blockchain"
 	"github.com/dmsRosa6/MoooChain/internal/options"
@@ -19,8 +18,7 @@ type Executer struct {
 	options *options.Options
 }
 
-func NewExecuter(l *log.Logger, options *options.Options) *Executer {
-	redis := initRedis()
+func NewExecuter(l *log.Logger, options *options.Options,  redis *redis.Client) *Executer {
 	log.Println("Redis initialized")
     return &Executer{log:l, options: options, redis: redis}
 }
@@ -28,8 +26,9 @@ func NewExecuter(l *log.Logger, options *options.Options) *Executer {
 func (e *Executer) Execute(command Command, args []string) error {
     switch command {
     case CreateBlockChain:
-        log.Println("Executing:", CommandLongName[command])
-		bc, err := blockchain.InitBlockchain(e.redis,e.log,e.options)
+        e.log.Println("Executing:", CommandLongName[command])
+		addr := args[0]
+		bc, err := blockchain.InitBlockchain(e.redis,e.log, e.options, addr)
 		
 		if err != nil {
 			return err
@@ -40,22 +39,16 @@ func (e *Executer) Execute(command Command, args []string) error {
 		return nil
 
     case AddBlock:
-        log.Println("Executing:", CommandLongName[command], "with args:", args)
-
-		if e.blockchain == nil {
-			return fmt.Errorf("blockchain not initialized")
-		}
-
-		err := e.blockchain.AddBlock(args[0])
-
-		if err != nil {
-			return err
-		}
-
+       	//implement
         return nil 
+	
+	case Send:
+       	
+		
+		return nil 
 
     case IterateBlockChain:
-        log.Println("Executing:", CommandLongName[command])
+        e.log.Println("Executing:", CommandLongName[command])
 
 		ite, _ := e.blockchain.IterateBlockChain();
 
@@ -66,7 +59,7 @@ func (e *Executer) Execute(command Command, args []string) error {
         return nil
 
     case GetBlock:
-        log.Println("Executing:", CommandLongName[command], "with args:", args)
+        e.log.Println("Executing:", CommandLongName[command], "with args:", args)
 		
 		if e.blockchain == nil {
 			return fmt.Errorf("blockchain not initialized")
@@ -77,7 +70,7 @@ func (e *Executer) Execute(command Command, args []string) error {
 	case DestroyBlockChain:
 		ctx := context.Background()
 		e.redis.FlushAll(ctx);
-		log.Println("Deleting...")
+		e.log.Println("Deleting...")
 		return nil
     case Exit:
 		if e.blockchain == nil{
@@ -99,28 +92,15 @@ func (e *Executer) Execute(command Command, args []string) error {
 
 func (e *Executer) CleanupChain() error{
 	if e.blockchain == nil {
-		return errors.New("blockchain null on chain cleanup operation.")
+		return errors.New("blockchain null on chain cleanup operation")
 	}
 
 	if e.blockchain.Database == nil {
-		return errors.New("db client null on chain cleanup operation.")
+		return errors.New("db client null on chain cleanup operation")
 	}
 	ctx := context.Background()
 
 	e.blockchain.Database.FlushAll(ctx)
 	
 	return nil 
-}
-func initRedis() *redis.Client {
-
-	client := redis.NewClient(&redis.Options{
-		Addr: buildAddr(),
-	})
-	return client
-}
-
-func buildAddr() string {
-	host := os.Getenv("REDIS_HOST")
-	port := os.Getenv("REDIS_PORT")
-	return host + ":" + port
 }

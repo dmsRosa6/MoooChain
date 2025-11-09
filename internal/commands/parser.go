@@ -5,53 +5,6 @@ import (
 	"strings"
 )
 
-type Command int
-
-const(
-	InvalidCommand Command = -1
-	CreateBlockChain Command = iota
-	DestroyBlockChain
-	AddBlock
-	IterateBlockChain
-	GetBlock
-	Exit
-)
-
-var(
-	StringToCommand = map[string]Command{
-		"CREATEBLOCKCHAIN" : CreateBlockChain,
-		"ADDBLOCK" : AddBlock,
-		"ITERATEBLOCKCHAIN" : IterateBlockChain,
-		"GETBLOCK" : GetBlock,
-		"DESTROYBLOCKCHAIN" : DestroyBlockChain,
-		"INIT" : CreateBlockChain,
-		"ADD" : AddBlock,
-		"ITERATE" : IterateBlockChain,
-		"GET" : GetBlock,
-		"DESTROY" : DestroyBlockChain,
-		"EXIT" : Exit,
-	}
-
-	CommandNumberArgs = map[Command]int{
-		CreateBlockChain : 0,
-		AddBlock : 1,
-		IterateBlockChain : 0,
-		GetBlock : 1,
-		Exit : 0,
-		DestroyBlockChain: 0,
-	}
-
-	CommandLongName = map[Command]string{
-		CreateBlockChain : "Create BlockChain",
-		AddBlock : "Add Block",
-		IterateBlockChain : "Iterate BlockChain",
-		GetBlock : "Get Block",
-		DestroyBlockChain : "Destroy BlockChain",
-		Exit : "Exit",
-	}
-)
-
-
 type Parser struct{
 
 }

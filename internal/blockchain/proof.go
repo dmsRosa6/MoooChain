@@ -31,7 +31,7 @@ func (pow *ProofOfWork) InitData(nonce int) []byte{
 	data := bytes.Join(
 		[][]byte{
 			pow.Block.PrevHash,
-			pow.Block.Data,
+			pow.Block.HashTransactions(),
 			toBytes(int64(nonce)),
 			toBytes(difficulty),
 		},
