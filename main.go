@@ -94,8 +94,7 @@ func main(){
 			log.Print(err)
 		}
 
-	}
-	
+	}	
 }
 
 func configLog() *log.Logger {
