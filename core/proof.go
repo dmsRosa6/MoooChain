@@ -1,4 +1,4 @@
-package blockchain
+package core
 
 import (
 	"bytes"
@@ -11,6 +11,10 @@ import (
 
 const difficulty = 12
 
+type Proof interface{
+	Run()
+	Validate()
+}
 
 type ProofOfWork struct{
 	Block *Block
@@ -30,7 +34,7 @@ func NewProof(b * Block) *ProofOfWork{
 func (pow *ProofOfWork) InitData(nonce int) []byte{
 	data := bytes.Join(
 		[][]byte{
-			pow.Block.PrevHash,
+			pow.Block.PrevBlock[:],
 			pow.Block.HashTransactions(),
 			toBytes(int64(nonce)),
 			toBytes(difficulty),
@@ -67,7 +71,7 @@ func (pow *ProofOfWork) Validate() bool {
 	var intHash big.Int
 	var hash [32]byte
 
-	data := pow.InitData(pow.Block.Nonce)
+	data := pow.InitData(int(pow.Block.Nonce))
 	hash = sha256.Sum256(data)
 
 	intHash.SetBytes(hash[:]) 

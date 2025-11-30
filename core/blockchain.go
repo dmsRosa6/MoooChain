@@ -1,4 +1,4 @@
-package blockchain
+package core
 
 import (
 	"bytes"
@@ -8,9 +8,9 @@ import (
 	"errors"
 	"log"
 
-	"github.com/dmsRosa6/MoooChain/internal/options"
-	"github.com/dmsRosa6/MoooChain/internal/redisutils"
-	"github.com/dmsRosa6/MoooChain/internal/transaction"
+	"github.com/dmsRosa6/MoooChain/options"
+	"github.com/dmsRosa6/MoooChain/redisutils"
+	"github.com/dmsRosa6/MoooChain/transaction"
 	"github.com/redis/go-redis/v9"
 )
 

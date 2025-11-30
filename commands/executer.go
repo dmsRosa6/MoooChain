@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dmsRosa6/MoooChain/internal/blockchain"
-	"github.com/dmsRosa6/MoooChain/internal/options"
+	"github.com/dmsRosa6/MoooChain/options"
 	"github.com/redis/go-redis/v9"
 )
 
