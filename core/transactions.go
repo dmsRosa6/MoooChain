@@ -1,4 +1,4 @@
-package transaction
+package core
 
 import (
 	"bytes"
@@ -34,13 +34,12 @@ func CreateMintTx(to, data string) (*Transaction, error){
 
 	tx := Transaction{nil, []TxInput{txin}, []TxOutput{txout}}
 	
-	id, err := generate256HashWithTx(tx)
+	//TODO Create a proper hash function based on the tx
+	_, err := sha256.New().Write(tx.ID)
 
 	if err != nil {
 		return nil, err
 	}
-
-	tx.ID = id
 
 	return &tx, nil
 }

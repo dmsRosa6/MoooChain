@@ -1,4 +1,4 @@
-package redisutils
+package utils
 
 import (
 	"encoding/hex"
@@ -42,8 +42,8 @@ func buildAddr() string {
 
 	if host == "" {
 		host = "localhost"
+		if port == "" {
 	}
-	if port == "" {
 		port = "6379"
 	}
 

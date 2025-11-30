@@ -2,12 +2,11 @@ package types
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 )
 
-
 type Hash [32]uint8
-
 
 func HashFromBytes(arr []byte) Hash{
 
@@ -24,6 +23,18 @@ func HashFromBytes(arr []byte) Hash{
 	return Hash(value)
 }
 
+func (h *Hash) IsZero() bool{
+
+	found := false
+
+	for i := 0 ; i < len(h) && !found; i++{
+		if(h[i] != 0){
+			found = true
+		}
+	}
+
+	return found
+}
 
 func RandomBytes(size int) []byte{
 	if size < 0 {
@@ -42,4 +53,6 @@ func RandomHash() Hash{
 	return HashFromBytes(RandomBytes(32))
 }
 
-
+func (h Hash) String() string{
+	return hex.EncodeToString(h[:])
+}
