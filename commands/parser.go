@@ -5,17 +5,16 @@ import (
 	"strings"
 )
 
-type Parser struct{
-
+type Parser struct {
 }
 
-func NewParser() *Parser{
+func NewParser() *Parser {
 	return &Parser{}
 }
 
-func (p *Parser) Parse(s string) (Command, []string, error){
+func (p *Parser) Parse(s string) (Command, []string, error) {
 	s = strings.TrimSpace(s)
-	
+
 	if s == "" {
 		return InvalidCommand, nil, fmt.Errorf("empty input")
 	}
@@ -24,7 +23,6 @@ func (p *Parser) Parse(s string) (Command, []string, error){
 
 	commandAsString := strings.ToUpper(strings.TrimSpace(tokens[0]))
 	args := tokens[1:]
-
 
 	command, ok := StringToCommand[commandAsString]
 
@@ -35,14 +33,13 @@ func (p *Parser) Parse(s string) (Command, []string, error){
 	numberOfArgs := CommandNumberArgs[command]
 
 	if len(args) != numberOfArgs {
-		return InvalidCommand, nil, 
-		fmt.Errorf("invalid number of arguments for %s operation. got: %d, expected: %d", 
-			CommandLongName[command], 
-			len(args),
-			numberOfArgs,
-		)
+		return InvalidCommand, nil,
+			fmt.Errorf("invalid number of arguments for %s operation. got: %d, expected: %d",
+				CommandLongName[command],
+				len(args),
+				numberOfArgs,
+			)
 	}
-
 
 	return command, args, nil
 }

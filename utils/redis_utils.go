@@ -43,7 +43,7 @@ func buildAddr() string {
 	if host == "" {
 		host = "localhost"
 		if port == "" {
-	}
+		}
 		port = "6379"
 	}
 

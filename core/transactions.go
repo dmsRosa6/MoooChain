@@ -8,23 +8,23 @@ import (
 )
 
 type Transaction struct {
-	ID []byte
-	Inputs []TxInput
+	ID      []byte
+	Inputs  []TxInput
 	Outputs []TxOutput
 }
 
 type TxOutput struct {
-	Value string
+	Value  string
 	PubKey string
 }
 
-type TxInput struct{
-	ID []byte
+type TxInput struct {
+	ID  []byte
 	Out int
 	Sig string
 }
 
-func CreateMintTx(to, data string) (*Transaction, error){
+func CreateMintTx(to, data string) (*Transaction, error) {
 	if data == "" {
 		data = fmt.Sprintf("to %s", to)
 	}
@@ -33,7 +33,7 @@ func CreateMintTx(to, data string) (*Transaction, error){
 	txout := TxOutput{"moo", to}
 
 	tx := Transaction{nil, []TxInput{txin}, []TxOutput{txout}}
-	
+
 	//TODO Create a proper hash function based on the tx
 	_, err := sha256.New().Write(tx.ID)
 
@@ -44,25 +44,25 @@ func CreateMintTx(to, data string) (*Transaction, error){
 	return &tx, nil
 }
 
-func (tx *Transaction) IsMintTx() bool{
+func (tx *Transaction) IsMintTx() bool {
 	return len(tx.Inputs) == 1 && len(tx.Inputs[0].ID) == 0 && tx.Inputs[0].Out == -1
 }
 
-func (in *TxInput) CanUnlock(data string) bool{
+func (in *TxInput) CanUnlock(data string) bool {
 	return in.Sig == data
 }
 
-func (out *TxOutput) CanBeLocked(data string) bool{
+func (out *TxOutput) CanBeLocked(data string) bool {
 	return out.PubKey == data
 }
 
-func (tx *Transaction) SetId() error{
+func (tx *Transaction) SetId() error {
 	var encoded bytes.Buffer
 	var hash [32]byte
 
 	encode := gob.NewEncoder(&encoded)
 	err := encode.Encode(tx)
-	
+
 	if err != nil {
 		return err
 	}

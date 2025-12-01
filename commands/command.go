@@ -4,8 +4,8 @@ import "strings"
 
 type Command int
 
-const(
-	InvalidCommand Command = -1
+const (
+	InvalidCommand   Command = -1
 	CreateBlockChain Command = iota
 	DestroyBlockChain
 	AddBlock
@@ -16,15 +16,15 @@ const(
 )
 
 type CommandInfo struct {
-	Names      []string
-	NumArgs    int
-	LongName   string
+	Names    []string
+	NumArgs  int
+	LongName string
 }
 
 var (
-	StringToCommand    = make(map[string]Command)
-	CommandNumberArgs  = make(map[Command]int)
-	CommandLongName    = make(map[Command]string)
+	StringToCommand   = make(map[string]Command)
+	CommandNumberArgs = make(map[Command]int)
+	CommandLongName   = make(map[Command]string)
 )
 
 func registerCommand(cmd Command, info CommandInfo) {

@@ -17,7 +17,7 @@ const (
 
 type Iterator struct {
 	object      []any
-	nextKey    []byte
+	nextKey     []byte
 	index       int
 	capacity    int
 	HasNextPage bool

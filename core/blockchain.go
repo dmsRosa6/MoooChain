@@ -15,7 +15,7 @@ import (
 
 var (
 	ErrBlockchainNotFound = errors.New("blockchain does not exist")
-	GenesisData = "Genesis"
+	GenesisData           = "Genesis"
 )
 
 type Blockchain struct {
@@ -43,13 +43,13 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options, 
 		log.Println("no blockchain found. creating new one...")
 		var encoded bytes.Buffer
 		encoder := gob.NewEncoder(&encoded)
-		
+
 		tx, err := CreateMintTx(addr, GenesisData)
-		
+
 		if err != nil {
 			return nil, err
 		}
-		
+
 		b := GenesisBlock(tx)
 		jsonEncoded, err := json.Marshal(b)
 
@@ -58,7 +58,7 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options, 
 		}
 
 		err = encoder.Encode(b)
-	
+
 		if err != nil {
 			return nil, err
 		}
@@ -92,21 +92,21 @@ func (bc *Blockchain) AddBlock(transactions []*transaction.Transaction) error {
 	ctx := context.Background()
 
 	lh, err := getBytes(bc.Database, ctx, utils.LastHashKeyKeyword)
-	
+
 	if err != nil {
 		return err
 	}
-	
+
 	if lh == nil {
 		return ErrBlockchainNotFound
 	}
 
 	var encoded bytes.Buffer
 	encoder := gob.NewEncoder(&encoded)
-	
+
 	newBlock := CreateBlock(transactions, lh)
 	data, err := json.Marshal(newBlock)
-	
+
 	if err != nil {
 		return err
 	}

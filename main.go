@@ -19,35 +19,35 @@ import (
 var clear map[string]func()
 
 func init() {
-    clear = make(map[string]func())
-    clear["linux"] = func() { 
-        cmd := exec.Command("clear")
-        cmd.Stdout = os.Stdout
-        cmd.Run()
-    }
-    clear["windows"] = func() {
-        cmd := exec.Command("cmd", "/c", "cls") 
-        cmd.Stdout = os.Stdout
-        cmd.Run()
-    }
+	clear = make(map[string]func())
+	clear["linux"] = func() {
+		cmd := exec.Command("clear")
+		cmd.Stdout = os.Stdout
+		cmd.Run()
+	}
+	clear["windows"] = func() {
+		cmd := exec.Command("cmd", "/c", "cls")
+		cmd.Stdout = os.Stdout
+		cmd.Run()
+	}
 
 	godotenv.Load()
-	
+
 }
 
-func CallClear() error{
-    value, ok := clear[runtime.GOOS]
-    if ok {
-        value()	
+func CallClear() error {
+	value, ok := clear[runtime.GOOS]
+	if ok {
+		value()
 	} else {
-        return errors.New("your platform is unsupported")
-    }
+		return errors.New("your platform is unsupported")
+	}
 
 	return nil
 }
 
-func main(){
-	
+func main() {
+
 	log := configLog()
 
 	err := CallClear()
@@ -58,7 +58,7 @@ func main(){
 
 	option := options.InitOptions(log)
 	option.Print()
-	r := redisutils.InitRedis();
+	r := redisutils.InitRedis()
 
 	ctx := context.Background()
 	_, err = r.Ping(ctx).Result()
@@ -74,7 +74,7 @@ func main(){
 	if option.CleanupChain {
 		defer executer.CleanupChain()
 	}
-	
+
 	run := true
 
 	for run {
@@ -82,19 +82,19 @@ func main(){
 		reader := bufio.NewReader(os.Stdin)
 		text, _ := reader.ReadString('\n')
 		command, args, err := parser.Parse(text)
-		
-		if err != nil{
+
+		if err != nil {
 			log.Print(err)
 			continue
 		}
 
-		err = executer.Execute(command,args)
+		err = executer.Execute(command, args)
 
-		if err != nil{
+		if err != nil {
 			log.Print(err)
 		}
 
-	}	
+	}
 }
 
 func configLog() *log.Logger {

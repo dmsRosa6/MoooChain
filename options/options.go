@@ -7,19 +7,19 @@ import (
 )
 
 type Options struct {
-	DebugChain bool
+	DebugChain   bool
 	CleanupChain bool
-	log *log.Logger
+	log          *log.Logger
 }
 
-//eventually this should be a env variable exported on program start or something
+// eventually this should be a env variable exported on program start or something
 // TODO not working
-func InitOptions(log *log.Logger) *Options{
+func InitOptions(log *log.Logger) *Options {
 	debugChain := true
 	cleanup := false
 
 	val := os.Getenv("DEBUG_CHAIN")
-	
+
 	if val != "" {
 		convertedVal, err := strconv.ParseBool(val)
 
@@ -43,12 +43,12 @@ func InitOptions(log *log.Logger) *Options{
 
 	}
 	return &Options{
-		DebugChain: debugChain,
+		DebugChain:   debugChain,
 		CleanupChain: cleanup,
-		log: log,
+		log:          log,
 	}
 }
 
-func (o Options) Print(){
+func (o Options) Print() {
 	log.Printf("\n*****Options*****\n\nDebug Chain: %t\n\n*****************\n\n", o.DebugChain)
 }

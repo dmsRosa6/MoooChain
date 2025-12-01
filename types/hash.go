@@ -8,27 +8,26 @@ import (
 
 type Hash [32]uint8
 
-func HashFromBytes(arr []byte) Hash{
+func HashFromBytes(arr []byte) Hash {
 
 	if len(arr) != 32 {
 		err := fmt.Sprintf("byte array length is %d, should be exactly 32", len(arr))
 		panic(err)
 	}
 
-
 	var value [32]uint8
 
 	copy(value[:], arr)
-	
+
 	return Hash(value)
 }
 
-func (h *Hash) IsZero() bool{
+func (h *Hash) IsZero() bool {
 
 	found := false
 
-	for i := 0 ; i < len(h) && !found; i++{
-		if(h[i] != 0){
+	for i := 0; i < len(h) && !found; i++ {
+		if h[i] != 0 {
 			found = true
 		}
 	}
@@ -36,23 +35,23 @@ func (h *Hash) IsZero() bool{
 	return found
 }
 
-func RandomBytes(size int) []byte{
+func RandomBytes(size int) []byte {
 	if size < 0 {
 		msg := fmt.Sprintf("request size is %d, needed a value greater than 0", size)
-		
+
 		panic(msg)
 	}
 
-	token := make([]byte,size)
+	token := make([]byte, size)
 	rand.Read(token)
 
 	return token
 }
 
-func RandomHash() Hash{
+func RandomHash() Hash {
 	return HashFromBytes(RandomBytes(32))
 }
 
-func (h Hash) String() string{
+func (h Hash) String() string {
 	return hex.EncodeToString(h[:])
 }
