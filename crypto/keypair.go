@@ -5,13 +5,27 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/dmsRosa6/MoooChain/types"
 )
 
 type PrivKey struct{
 	key *ecdsa.PrivateKey
+}
+
+func (k PrivKey)Sign(data []byte) (*Signature, error){
+
+	//TODO I should probably use SignASN1 to simplify
+	r,s, err := ecdsa.Sign(rand.Reader, k.key, data)
+
+	if err != nil {
+		return nil, errors.New("error while signing")
+	}
+
+	return &Signature{r: r, s: s}, nil
 }
 
 
@@ -48,5 +62,11 @@ func (k PubKey) Address() types.Address {
 
 
 type Signature struct{
-	
+	r *big.Int
+	s *big.Int
+}
+
+func (sig Signature) Verify(signedData []byte, pubKey PubKey) bool{
+
+	return ecdsa.Verify(pubKey.key, signedData, sig.r, sig.s)
 }
