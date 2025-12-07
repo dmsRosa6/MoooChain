@@ -66,6 +66,7 @@ type Signature struct{
 	s *big.Int
 }
 
+//TODO change this to a error instead of a bool maybe
 func (sig Signature) Verify(signedData []byte, pubKey PubKey) bool{
 
 	return ecdsa.Verify(pubKey.key, signedData, sig.r, sig.s)

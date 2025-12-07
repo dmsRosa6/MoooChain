@@ -36,38 +36,32 @@ func TestHeader_Encode_Then_Decode(t *testing.T) {
 }
 
 func TestBlock_Encode_Then_Decode(t *testing.T) {
-	header := Header{
-		Version:   1,
-		PrevBlock: types.RandomHash(),
-		Nonce:     1,
-		Timestamp: time.Now().UnixNano(),
-		Height:    0,
-	}
+    header := Header{
+        Version:   1,
+        PrevBlock: types.RandomHash(),
+        Nonce:     1,
+        Timestamp: time.Now().UnixNano(),
+        Height:    0,
+    }
 
-	block := Block{Header: header, Data: []Transaction{}}
+    block := Block{Header: header, Data: []Transaction{}}
 
-	buf := bytes.Buffer{}
+    var buf bytes.Buffer
 
-	err := block.EncodeBlock(&buf)
-	assert.Nil(t, err)
+    err := block.EncodeBlock(&buf, BlockEncoder{})
+    assert.Nil(t, err)
 
-	newBlock, err := DecodeBlock(&buf)
-	assert.Nil(t, err)
+    dec := BlockDecoder{}
+    err = DecodeBlock(&buf, &dec)
+    assert.Nil(t, err)
 
-	newHeader := newBlock.Header
+	//TODO come to this test later
+    newBlock := dec.
+    assert.NotNil(t, newBlock)
 
-	assert.Equal(t, header.Version, newHeader.Version)
-	assert.Equal(t, header.PrevBlock, newHeader.PrevBlock)
-	assert.Equal(t, header.Nonce, newHeader.Nonce)
-	assert.Equal(t, header.Timestamp, newHeader.Timestamp)
-	assert.Equal(t, header.Height, newHeader.Height)
-
-	assert.Equal(t, header, newHeader)
-	assert.Equal(t, block.Data, newBlock.Data)
-
-	assert.Equal(t, block, newBlock)
-
+    assert.Equal(t, block, newBlock)
 }
+
 
 func TestBlock_Hash(t *testing.T) {
 	header := Header{
@@ -82,10 +76,10 @@ func TestBlock_Hash(t *testing.T) {
 
 	assert.Nil(t, block.hash)
 
-	h := block.Hash()
+	h := block.Hash(BlockHasher{})
 	assert.Equal(t, h.IsZero(), false)
 
-	h1 := block.Hash()
+	h1 := block.Hash(BlockHasher{})
 	assert.Equal(t, h, h1)
 	assert.Equal(t, h.IsZero(), false)
 }

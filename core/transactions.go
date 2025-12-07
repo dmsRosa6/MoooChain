@@ -4,13 +4,20 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
+	"errors"
 	"fmt"
+
+	"github.com/dmsRosa6/MoooChain/crypto"
 )
 
 type Transaction struct {
 	ID      []byte
 	Inputs  []TxInput
 	Outputs []TxOutput
+
+	Data      []byte
+	PubKey crypto.PubKey
+	Signature *crypto.Signature
 }
 
 type TxOutput struct {
@@ -32,7 +39,7 @@ func CreateMintTx(to, data string) (*Transaction, error) {
 	txin := TxInput{[]byte{}, -1, data}
 	txout := TxOutput{"moo", to}
 
-	tx := Transaction{nil, []TxInput{txin}, []TxOutput{txout}}
+	tx := Transaction{nil, []TxInput{txin}, []TxOutput{txout}, nil, crypto.PubKey{}, nil}
 
 	//TODO Create a proper hash function based on the tx
 	_, err := sha256.New().Write(tx.ID)
@@ -42,6 +49,34 @@ func CreateMintTx(to, data string) (*Transaction, error) {
 	}
 
 	return &tx, nil
+}
+
+func (tx *Transaction) Sign(key crypto.PrivKey) error{
+
+	sign, err := key.Sign(tx.Data)
+
+	if err != nil {
+		return err
+	}
+
+	tx.PubKey = key.PubKey()
+	tx.Signature = sign
+
+	return nil
+}
+
+
+func (tx *Transaction) Verify() error{
+
+    if tx.Signature == nil{
+		return errors.New("transaction has no signature")
+	}
+
+	if isVerified := tx.Signature.Verify(tx.Data, tx.PubKey); !isVerified{
+        return errors.New("invalid transation signature")
+	}
+
+	return nil
 }
 
 func (tx *Transaction) IsMintTx() bool {

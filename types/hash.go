@@ -8,6 +8,7 @@ import (
 
 type Hash [32]uint8
 
+//TODO maybe i should no panic here
 func HashFromBytes(arr []byte) Hash {
 
 	if len(arr) != 32 {
@@ -24,15 +25,13 @@ func HashFromBytes(arr []byte) Hash {
 
 func (h *Hash) IsZero() bool {
 
-	found := false
-
-	for i := 0; i < len(h) && !found; i++ {
+	for i := 0; i < len(h); i++ {
 		if h[i] != 0 {
-			found = true
+			return  false
 		}
 	}
 
-	return found
+	return true
 }
 
 func RandomBytes(size int) []byte {
@@ -43,7 +42,10 @@ func RandomBytes(size int) []byte {
 	}
 
 	token := make([]byte, size)
-	rand.Read(token)
+	if _, err := rand.Read(token); err != nil {
+        panic(err)
+    }
+
 
 	return token
 }
