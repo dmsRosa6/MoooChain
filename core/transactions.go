@@ -65,7 +65,6 @@ func (tx *Transaction) Sign(key crypto.PrivKey) error{
 	return nil
 }
 
-
 func (tx *Transaction) Verify() error{
 
     if tx.Signature == nil{

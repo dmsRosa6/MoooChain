@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dmsRosa6/MoooChain/crypto"
 	"github.com/dmsRosa6/MoooChain/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -55,8 +56,7 @@ func TestBlock_Encode_Then_Decode(t *testing.T) {
     err = DecodeBlock(&buf, &dec)
     assert.Nil(t, err)
 
-	//TODO come to this test later
-    newBlock := dec.
+    newBlock := dec.Decode(&buf)
     assert.NotNil(t, newBlock)
 
     assert.Equal(t, block, newBlock)
@@ -82,4 +82,87 @@ func TestBlock_Hash(t *testing.T) {
 	h1 := block.Hash(BlockHasher{})
 	assert.Equal(t, h, h1)
 	assert.Equal(t, h.IsZero(), false)
+}
+
+func TestSignVerifyBlockSuccess(t *testing.T) {
+	header := Header{
+		Version:   1,
+		PrevBlock: types.RandomHash(),
+		Nonce:     1,
+		Timestamp: time.Now().UnixNano(),
+		Height:    0,
+	}
+
+	block := Block{Header: header, Data: []Transaction{}}
+
+	privKey := crypto.NewPrivKey()
+
+	err := block.Sign(privKey)
+
+	assert.Nil(t,err)
+	
+	err = block.Verify()
+	
+	assert.Nil(t,err)
+
+}
+
+func TestSignVerifyBlockBadSignature(t *testing.T) {
+	header := Header{
+		Version:   1,
+		PrevBlock: types.RandomHash(),
+		Nonce:     1,
+		Timestamp: time.Now().UnixNano(),
+		Height:    0,
+	}
+
+	block := Block{Header: header, Data: []Transaction{}}
+
+	privKey := crypto.NewPrivKey()
+
+	privKey2 := crypto.NewPrivKey()
+
+	err := block.Sign(privKey)
+
+	assert.Nil(t,err)
+
+	sign2, err := privKey2.Sign(block.HeaderData())
+	
+	assert.Nil(t,err)
+
+	block.Signature = sign2
+
+	err = block.Verify()
+	
+	assert.NotNil(t,err)
+
+}
+
+func TestSignVerifyBlockBadHash(t *testing.T) {
+	header := Header{
+		Version:   1,
+		PrevBlock: types.RandomHash(),
+		Nonce:     1,
+		Timestamp: time.Now().UnixNano(),
+		Height:    0,
+	}
+
+	block := Block{Header: header, Data: []Transaction{}}
+
+	privKey := crypto.NewPrivKey()
+
+	err := block.Sign(privKey)
+
+	assert.Nil(t,err)
+
+	sign2, err := privKey.Sign([]byte("bad"))
+	
+	assert.Nil(t,err)
+
+	block.Signature = sign2
+
+	err = block.Verify()
+	
+	assert.NotNil(t,err)
+
 }

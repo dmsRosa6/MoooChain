@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
-	"errors"
+	"encoding/gob"
+	"fmt"
 	"io"
 
 	"github.com/dmsRosa6/MoooChain/crypto"
@@ -35,35 +36,8 @@ type Block struct {
 	Header `json:"header"`
 	Data   []Transaction `json:"data"`
 	Signature *crypto.Signature
-	Validator *crypto.PubKey
+	Validator crypto.PubKey
 	hash types.Hash
-}
-
-func (b *Block) Sign(key crypto.PrivKey) error{
-    
-	h := b.Hash(BlockHasher{})
-    sign, err := key.Sign(h[:])
-
-	if err != nil {
-		return err
-	}
-
-	b.Signature = sign
-
-	return nil
-}
-
-func (b *Block) Verify() error{
-
-    if b.Signature == nil{
-		return errors.New("transaction has no signature")
-	}
-
-	if isVerified := b.Signature.Verify(b.Data, b.PubKey); !isVerified{
-        return errors.New("invalid transation signature")
-	}
-
-	return nil
 }
 
 func (b *Block) Hash(hasher Hasher[*Block]) types.Hash {
@@ -80,6 +54,44 @@ func (b *Block) EncodeBlock(w io.Writer, encoder Encoder[*Block]) error {
 
 func DecodeBlock(r io.Reader, decoder Decoder[*Block])  error {
 	return decoder.Decode(r)
+}
+
+func (b * Block) HeaderData() []byte{
+
+	buf := bytes.Buffer{}
+
+	encoder := gob.NewEncoder(&buf)
+
+	encoder.Encode(b.Header)
+
+	return buf.Bytes()
+}
+
+func (b * Block) Sign(privKey crypto.PrivKey) error{
+
+	sign, err := privKey.Sign(b.HeaderData())
+
+	if err != nil {
+		return err
+	}
+	
+	b.Validator = privKey.PubKey()
+	b.Signature = sign
+
+	return nil
+}
+
+
+func (b * Block) Verify() error{
+	if b.Signature == nil {
+		return fmt.Errorf("block has no signature")
+	}
+
+	if !b.Signature.Verify(b.HeaderData(), b.Validator) {
+		return fmt.Errorf("invalid signature")
+	}
+
+	return nil
 }
 
 func CreateBlock(txs []Transaction, prevBlock []byte) *Block {
