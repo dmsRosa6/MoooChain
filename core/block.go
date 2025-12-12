@@ -13,11 +13,11 @@ import (
 )
 
 type Header struct {
-	Version   uint32     `json:"version"`
-	PrevBlock types.Hash `json:"prev_block"`
-	Nonce     uint64     `json:"nonce"`
-	Timestamp int64      `json:"ts"`
-	Height    uint64     `json:"height"`
+	Version   uint32
+	PrevBlock types.Hash
+	Nonce     uint64
+	Timestamp int64
+	Height    uint64
 }
 
 func (h *Header) EncodeHeader(w io.Writer) error {
@@ -33,9 +33,9 @@ func DecodeHeader(r io.Reader) (*Header, error) {
 }
 
 type Block struct {
-	*Header `json:"header"`
-	Data   []Transaction `json:"data"`
-	Signature *crypto.Signature
+	*Header
+	Data   []Transaction
+	Signature *crypto.Signature 
 	Validator crypto.PubKey
 	hash types.Hash
 }
