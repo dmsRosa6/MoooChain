@@ -19,13 +19,34 @@ var (
 )
 
 type Blockchain struct {
-	LastHash []byte
+	headers []*Header
 	Database *redis.Client
+	validator Validator
 	log      *log.Logger
 	options  *options.Options
 }
 
-func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options, addr string) (*Blockchain, error) {
+func (bc *Blockchain) Height() uint32{
+	return uint32(len(bc.headers) - 1)
+}
+
+func (bc *Blockchain) SetValidator(v Validator) {
+	bc.validator = v
+}
+
+func (bc *Blockchain) HasBlock(height uint32) bool{
+	return height < bc.Height()
+}
+
+func (bc *Blockchain) AddBlock() {
+
+}
+
+func (bc *Blockchain) addBlockNoValidation(b * Block) {
+	bc.headers = append(bc.headers, b.Header)
+}
+
+func NewBlockchain(genesis *Block, r *redis.Client, log *log.Logger, options *options.Options, addr string) (*Blockchain, error) {
 	ctx := context.Background()
 
 	val, err := getBytes(r, ctx, utils.LastHashKeyKeyword)
@@ -38,6 +59,10 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options, 
 	}
 
 	bc := Blockchain{Database: r, log: log, options: options}
+
+	blockValidator := NewBlockValidator(bc) 
+
+	bc.validator = blockValidator
 
 	if val == nil {
 		log.Println("no blockchain found. creating new one...")
@@ -88,7 +113,7 @@ func InitBlockchain(r *redis.Client, log *log.Logger, options *options.Options, 
 	return &bc, nil
 }
 
-func (bc *Blockchain) AddBlock(transactions []*transaction.Transaction) error {
+func (bc *Blockchain) AddBlock(block *Block) error {
 	ctx := context.Background()
 
 	lh, err := getBytes(bc.Database, ctx, utils.LastHashKeyKeyword)

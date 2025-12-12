@@ -33,7 +33,7 @@ func DecodeHeader(r io.Reader) (*Header, error) {
 }
 
 type Block struct {
-	Header `json:"header"`
+	*Header `json:"header"`
 	Data   []Transaction `json:"data"`
 	Signature *crypto.Signature
 	Validator crypto.PubKey
@@ -94,30 +94,6 @@ func (b * Block) Verify() error{
 	return nil
 }
 
-func CreateBlock(txs []Transaction, prevBlock []byte) *Block {
-
-	header := Header{
-		PrevBlock: types.HashFromBytes(prevBlock),
-		Nonce:     0,
-	}
-
-	block := Block{
-		Header: header,
-		Data:   txs,
-	}
-
-	//TODO finish this
-	//proof := NewProof(&block)
-	//nonce, hash := proof.Run()
-	//block.Hash = hash
-	//block.Nonce = nonce
-	return &block
-}
-
-func GenesisBlock(mintTx Transaction) *Block {
-	b := CreateBlock([]Transaction{mintTx}, []byte{})
-	return b
-}
 
 func (b *Block) HashTransactions() []byte {
 	var txHashes [][]byte

@@ -45,7 +45,7 @@ func TestBlock_Encode_Then_Decode(t *testing.T) {
         Height:    0,
     }
 
-    block := Block{Header: header, Data: []Transaction{}}
+    block := Block{Header: &header, Data: []Transaction{}}
 
     var buf bytes.Buffer
 
@@ -72,7 +72,7 @@ func TestBlock_Hash(t *testing.T) {
 		Height:    0,
 	}
 
-	block := Block{Header: header, Data: []Transaction{}}
+	block := Block{Header: &header, Data: []Transaction{}}
 
 	assert.Nil(t, block.hash)
 
@@ -93,7 +93,7 @@ func TestSignVerifyBlockSuccess(t *testing.T) {
 		Height:    0,
 	}
 
-	block := Block{Header: header, Data: []Transaction{}}
+	block := Block{Header: &header, Data: []Transaction{}}
 
 	privKey := crypto.NewPrivKey()
 
@@ -116,7 +116,7 @@ func TestSignVerifyBlockBadSignature(t *testing.T) {
 		Height:    0,
 	}
 
-	block := Block{Header: header, Data: []Transaction{}}
+	block := Block{Header: &header, Data: []Transaction{}}
 
 	privKey := crypto.NewPrivKey()
 
@@ -147,7 +147,7 @@ func TestSignVerifyBlockBadHash(t *testing.T) {
 		Height:    0,
 	}
 
-	block := Block{Header: header, Data: []Transaction{}}
+	block := Block{Header: &header, Data: []Transaction{}}
 
 	privKey := crypto.NewPrivKey()
 
