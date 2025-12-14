@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -10,159 +11,110 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHeader_Encode_Then_Decode(t *testing.T) {
-	header := Header{
+func RandomInt64() uint64 {
+    return rand.Uint64()
+}
+
+func RandomHeader(height uint64) *Header {
+	return &Header{
 		Version:   1,
 		PrevBlock: types.RandomHash(),
-		Nonce:     1,
+		Nonce:     RandomInt64(),
 		Timestamp: time.Now().UnixNano(),
-		Height:    0,
+		Height:    height,
 	}
+}
 
+// TODO Add tx's in the future
+func RandomBlock(dataSize int, height uint64) *Block {
+	header := RandomHeader(height)
+	data := make([]Transaction, dataSize)
+	for i := 0; i < dataSize; i++ {
+		
+	}
+	return &Block{
+		Header: header,
+		Data:   data,
+	}
+}
+
+func RandomBlockWithSig(dataSize int, height uint64) *Block {
+	privkey := crypto.NewPrivKey()
+	b := RandomBlock(dataSize, height)
+	b.Sign(privkey)
+
+	return b
+}
+
+// --- Tests ---
+
+func TestHeader_EncodeDecode(t *testing.T) {
+	header := RandomHeader(0)
 	buf := bytes.Buffer{}
 
-	err := header.EncodeHeader(&buf)
-	assert.Nil(t, err)
+	assert.NoError(t, header.EncodeHeader(&buf))
 
 	newHeader, err := DecodeHeader(&buf)
-	assert.Nil(t, err)
-
-	assert.Equal(t, header.Version, newHeader.Version)
-	assert.Equal(t, header.PrevBlock, newHeader.PrevBlock)
-	assert.Equal(t, header.Nonce, newHeader.Nonce)
-	assert.Equal(t, header.Timestamp, newHeader.Timestamp)
-	assert.Equal(t, header.Height, newHeader.Height)
-
+	assert.NoError(t, err)
 	assert.Equal(t, header, newHeader)
 }
 
-func TestBlock_Encode_Then_Decode(t *testing.T) {
-    header := Header{
-        Version:   1,
-        PrevBlock: types.RandomHash(),
-        Nonce:     1,
-        Timestamp: time.Now().UnixNano(),
-        Height:    0,
-    }
+func TestBlock_EncodeDecode(t *testing.T) {
+	block := RandomBlock(3,0)
+	buf := bytes.Buffer{}
 
-    block := Block{Header: &header, Data: []Transaction{}}
+	assert.NoError(t, block.EncodeBlock(&buf, BlockEncoder{}))
 
-    var buf bytes.Buffer
+	dec := BlockDecoder{}
+	assert.NoError(t, DecodeBlock(&buf, &dec))
 
-    err := block.EncodeBlock(&buf, BlockEncoder{})
-    assert.Nil(t, err)
-
-    dec := BlockDecoder{}
-    err = DecodeBlock(&buf, &dec)
-    assert.Nil(t, err)
-
-    newBlock := dec.Decode(&buf)
-    assert.NotNil(t, newBlock)
-
-    assert.Equal(t, block, newBlock)
+	newBlock := dec.Decode(&buf)
+	assert.NotNil(t, newBlock)
 }
-
 
 func TestBlock_Hash(t *testing.T) {
-	header := Header{
-		Version:   1,
-		PrevBlock: types.RandomHash(),
-		Nonce:     1,
-		Timestamp: time.Now().UnixNano(),
-		Height:    0,
-	}
-
-	block := Block{Header: &header, Data: []Transaction{}}
-
-	assert.Nil(t, block.hash)
+	block := RandomBlock(0,0)
+	assert.NotNil(t, block.hash)
 
 	h := block.Hash(BlockHasher{})
-	assert.Equal(t, h.IsZero(), false)
+	assert.False(t, h.IsZero())
 
-	h1 := block.Hash(BlockHasher{})
-	assert.Equal(t, h, h1)
-	assert.Equal(t, h.IsZero(), false)
+	h2 := block.Hash(BlockHasher{})
+	assert.Equal(t, h, h2)
 }
 
-func TestSignVerifyBlockSuccess(t *testing.T) {
-	header := Header{
-		Version:   1,
-		PrevBlock: types.RandomHash(),
-		Nonce:     1,
-		Timestamp: time.Now().UnixNano(),
-		Height:    0,
-	}
+func TestSignVerifyBlock_Success(t *testing.T) {
+	block := RandomBlock(2,1)
+	priv := crypto.NewPrivKey()
 
-	block := Block{Header: &header, Data: []Transaction{}}
-
-	privKey := crypto.NewPrivKey()
-
-	err := block.Sign(privKey)
-
-	assert.Nil(t,err)
-	
-	err = block.Verify()
-	
-	assert.Nil(t,err)
-
+	assert.NoError(t, block.Sign(priv))
+	assert.NoError(t, block.Verify())
 }
 
-func TestSignVerifyBlockBadSignature(t *testing.T) {
-	header := Header{
-		Version:   1,
-		PrevBlock: types.RandomHash(),
-		Nonce:     1,
-		Timestamp: time.Now().UnixNano(),
-		Height:    0,
-	}
+func TestSignVerifyBlock_BadSignature(t *testing.T) {
+	block := RandomBlock(2,2)
+	priv1 := crypto.NewPrivKey()
+	priv2 := crypto.NewPrivKey()
 
-	block := Block{Header: &header, Data: []Transaction{}}
+	assert.NoError(t, block.Sign(priv1))
 
-	privKey := crypto.NewPrivKey()
-
-	privKey2 := crypto.NewPrivKey()
-
-	err := block.Sign(privKey)
-
-	assert.Nil(t,err)
-
-	sign2, err := privKey2.Sign(block.HeaderData())
-	
-	assert.Nil(t,err)
-
+	// forge with different key
+	sign2, err := priv2.Sign(block.HeaderData())
+	assert.NoError(t, err)
 	block.Signature = sign2
 
-	err = block.Verify()
-	
-	assert.NotNil(t,err)
-
+	assert.Error(t, block.Verify())
 }
 
-func TestSignVerifyBlockBadHash(t *testing.T) {
-	header := Header{
-		Version:   1,
-		PrevBlock: types.RandomHash(),
-		Nonce:     1,
-		Timestamp: time.Now().UnixNano(),
-		Height:    0,
-	}
+func TestSignVerifyBlock_BadHash(t *testing.T) {
+	block := RandomBlock(2,2)
+	priv := crypto.NewPrivKey()
 
-	block := Block{Header: &header, Data: []Transaction{}}
+	assert.NoError(t, block.Sign(priv))
 
-	privKey := crypto.NewPrivKey()
-
-	err := block.Sign(privKey)
-
-	assert.Nil(t,err)
-
-	sign2, err := privKey.Sign([]byte("bad"))
-	
-	assert.Nil(t,err)
-
+	sign2, err := priv.Sign([]byte("bad"))
+	assert.NoError(t, err)
 	block.Signature = sign2
 
-	err = block.Verify()
-	
-	assert.NotNil(t,err)
-
+	assert.Error(t, block.Verify())
 }

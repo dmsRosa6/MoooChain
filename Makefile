@@ -5,6 +5,7 @@ run: build
 	./bin/mooochain
 
 test:
+	go clean -testcache
 	go test -v ./...
 
 PB_OUT=core/pb

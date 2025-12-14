@@ -1,20 +1,21 @@
 package options
 
 import (
-	"log"
 	"os"
 	"strconv"
+
+	"github.com/dmsRosa6/MoooChain/log"
 )
 
 type Options struct {
 	DebugChain   bool
 	CleanupChain bool
-	log          *log.Logger
+	log          log.Logger
 }
 
 // eventually this should be a env variable exported on program start or something
 // TODO not working
-func InitOptions(log *log.Logger) *Options {
+func InitOptions(log log.Logger) *Options {
 	debugChain := true
 	cleanup := false
 
@@ -50,5 +51,5 @@ func InitOptions(log *log.Logger) *Options {
 }
 
 func (o Options) Print() {
-	log.Printf("\n*****Options*****\n\nDebug Chain: %t\n\n*****************\n\n", o.DebugChain)
+	o.log.Printf("\n*****Options*****\n\nDebug Chain: %t\n\n*****************\n\n", o.DebugChain)
 }

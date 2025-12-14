@@ -10,9 +10,9 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/dmsRosa6/MoooChain/internal/commands"
-	"github.com/dmsRosa6/MoooChain/internal/options"
-	"github.com/dmsRosa6/MoooChain/internal/redisutils"
+	"github.com/dmsRosa6/MoooChain/commands"
+	"github.com/dmsRosa6/MoooChain/options"
+	"github.com/dmsRosa6/MoooChain/utils"
 	"github.com/joho/godotenv"
 )
 
@@ -58,7 +58,7 @@ func main() {
 
 	option := options.InitOptions(log)
 	option.Print()
-	r := redisutils.InitRedis()
+	r := utils.InitRedis()
 
 	ctx := context.Background()
 	_, err = r.Ping(ctx).Result()
@@ -70,10 +70,6 @@ func main() {
 
 	parser := commands.NewParser()
 	executer := commands.NewExecuter(log, option, r)
-
-	if option.CleanupChain {
-		defer executer.CleanupChain()
-	}
 
 	run := true
 
